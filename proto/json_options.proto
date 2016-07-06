@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package proto;
+
+message JsonOptions {
+  // Stop adding spaces, line breaks and indentation to make the JSON output
+  // easy to read.
+  bool compact = 1;
+
+  // Suppress outputting primitive fields with default values.
+  bool suppress_default_primitive_values = 2;
+}

@@ -1,0 +1,3 @@
+message Example {
+  optional int32 id = 1;
+}
