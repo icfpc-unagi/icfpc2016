@@ -6,7 +6,6 @@
 #include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
 
-using google::protobuf::Descriptor;
 using google::protobuf::DescriptorPool;
 using google::protobuf::util::TypeResolver;
 using google::protobuf::util::NewTypeResolverForDescriptorPool;

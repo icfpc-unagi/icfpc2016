@@ -1,6 +1,6 @@
 licenses(["notice"])
 
-package(default_visibility = ["//visibility:private"])
+package(default_visibility = ["//visibility:public"])
 
 load("@protobuf//:protobuf.bzl", "cc_proto_library")
 
@@ -29,6 +29,7 @@ cc_binary(
     deps = [
         "//external:base",
     ],
+    linkstatic = 1,
 )
 
 cc_test(

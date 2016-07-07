@@ -3,6 +3,7 @@
 
 namespace proto {
 
+using google::protobuf::Descriptor;
 using google::protobuf::Message;
 using google::protobuf::TextFormat;
 
