@@ -7,7 +7,11 @@ machine:
 dependencies:
   cache_directories:
     - ~/bazel-0.3.0
+    - ~/.cache/bazel
   pre:
+    - env
+    - which php
+    - php -v
     - ls -lA ~/
     - sudo apt-get update && sudo apt-get install g++-4.8 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 99
     - if [ ! -x ~/bazel-0.3.0/output/bazel ]; then rm -rf bazel-0.3.0 || true; fi
@@ -15,10 +19,8 @@ dependencies:
     - echo 'startup --batch' >> ~/.bazelrc
     - echo 'build --jobs=1 --local_resources=2000,1,1 --spawn_strategy=standalone --genrule_strategy=standalone --package_path %workspace%:/home/ubuntu/bazel-0.3.0/base_workspace' >> ~/.bazelrc
     - cd && mkdir -p ~/bin && ln -s ~/bazel-0.3.0/output/bazel ~/bin/bazel
+    - bazel build -c opt //...
 
 test:
   override:
-    - env
-    - which php
-    - php -v
     - bazel test -c opt --test_output=all //...
