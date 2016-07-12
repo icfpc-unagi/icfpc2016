@@ -1,7 +1,7 @@
 http_archive(
     name = "gbase",
-    url = "https://s3-ap-northeast-1.amazonaws.com/ninecluster/binary/gbase.zip",
-    sha256 = "52663cd4277bf5f650902cb7c0300d8c4024f8ca29c13505a59f84854cac835f",
+    url = "https://github.com/imos/gbase/releases/download/v0.8.3/gbase.zip",
+    sha256 = "bd1925d2b25b947f2e151fc440a760c3d557f79b6f7ca4cd003f8d4fdbead699",
 )
 
 bind(
