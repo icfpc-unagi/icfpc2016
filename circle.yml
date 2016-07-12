@@ -6,17 +6,17 @@ machine:
 
 dependencies:
   cache_directories:
-    - ~/bazel
+    - ~/bazel-0.3.0
   pre:
     - ls -lA ~/
     - sudo apt-get update && sudo apt-get install g++-4.8 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 99
-    - if [ ! -d ~/bazel ]; then cd && git clone --depth=1 -b 0.3.0 https://github.com/bazelbuild/bazel.git && cd bazel && ./compile.sh; fi
-    - echo 'build --package_path %workspace%:/home/ubuntu/bazel/base_workspace' > ~/.bazelrc
-    - mkdir -p ~/bin && ln -s ~/bazel/output/bazel ~/bin/bazel
+    - if [ ! -x ~/bazel/bin/bazel ]; then cd && git clone --depth=1 -b 0.3.0 https://github.com/bazelbuild/bazel.git && cd bazel-0.3.0 && EXTRA_BAZEL_ARGS=--local_resources=3000,2,1 ./compile.sh; fi
+    - echo 'build --package_path %workspace%:/home/ubuntu/bazel-0.3.0/base_workspace' > ~/.bazelrc
+    - cd && mkdir -p ~/bin && ln -s ~/bazel-0.3.0/output/bazel ~/bin/bazel
 
 test:
   override:
     - env
     - which php
     - php -v
-    - ~/bazel/output/bazel test -c opt --test_output=all //...
+    - bazel test -c opt --test_output=all //...
