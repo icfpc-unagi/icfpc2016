@@ -10,7 +10,7 @@ dependencies:
   pre:
     - ls -lA ~/
     - sudo apt-get update && sudo apt-get install g++-4.8 && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 99
-    - if [ ! -x ~/bazel-0.3.0/output/bazel ]; then rm -rf bazel-0.3.0 || true; done
+    - if [ ! -x ~/bazel-0.3.0/output/bazel ]; then rm -rf bazel-0.3.0 || true; fi
     - if [ ! -d ~/bazel-0.3.0 ]; then cd && git clone --depth=1 -b 0.3.0 https://github.com/bazelbuild/bazel.git bazel-0.3.0 && cd bazel-0.3.0 && EXTRA_BAZEL_ARGS='--jobs=1 --local_resources=2000,1,1' ./compile.sh; fi
     - echo 'startup --batch' >> ~/.bazelrc
     - echo 'build --spawn_strategy=standalone --genrule_strategy=standalone --package_path %workspace%:/home/ubuntu/bazel-0.3.0/base_workspace' >> ~/.bazelrc
