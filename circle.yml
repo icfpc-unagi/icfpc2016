@@ -17,3 +17,5 @@ dependencies:
 test:
   override:
     - bazel test -c opt --test_output=all //...
+  post:
+    - make upload
