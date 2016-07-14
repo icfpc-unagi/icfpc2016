@@ -3,12 +3,6 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:private"])
 
 sh_binary(
-    name = "binary",
-    srcs = ["empty.sh"],
-    data = ["//example:glog_main"],
-)
-
-sh_binary(
     name = "data",
     srcs = ["empty.sh"],
     data = ["//example:glog_main"],
