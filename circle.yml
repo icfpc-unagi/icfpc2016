@@ -12,10 +12,10 @@ dependencies:
     - if [ ! -x ~/bazel-0.3.0/output/bazel ]; then rm -rf bazel-0.3.0 || true; fi && if [ ! -d ~/bazel-0.3.0 ]; then cd && git clone --depth=1 -b 0.3.0 https://github.com/bazelbuild/bazel.git bazel-0.3.0 && cd bazel-0.3.0 && EXTRA_BAZEL_ARGS='--jobs=1 --local_resources=2000,1,1' ./compile.sh; fi
     - echo 'startup --batch' >> ~/.bazelrc && echo 'build --jobs=2 --local_resources=1500,2,1 --spawn_strategy=standalone --genrule_strategy=standalone --package_path %workspace%:/home/ubuntu/bazel-0.3.0/base_workspace' >> ~/.bazelrc
     - cd && mkdir -p ~/bin && ln -s ~/bazel-0.3.0/output/bazel ~/bin/bazel
-    - bazel build -c opt //...
+    - make build
 
 test:
   override:
-    - bazel test -c opt --test_output=all //...
+    - make test
   post:
     - make upload
