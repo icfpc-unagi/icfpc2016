@@ -14,3 +14,9 @@ genrule(
     outs = ["empty.sh"],
     cmd = "touch \"$@\"; chmod +x \"$@\"",
 )
+
+sh_binary(
+    name = "upload",
+    srcs = ["upload.sh"],
+    data = [":data"],
+)

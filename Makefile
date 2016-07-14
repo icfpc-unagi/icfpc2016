@@ -7,5 +7,5 @@ build:
 .PHONY: build
 
 upload:
-	bash package/upload.sh
+	bazel run -c opt //package:upload
 .PHONY: upload
