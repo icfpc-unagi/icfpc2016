@@ -17,6 +17,7 @@ cc_binary(
 imosh_test(
     name = "ninestream_test",
     srcs = ["ninestream_test.sh"],
+    timeout = "short",
     data = [
         ":ninestream",
         "//bin",
