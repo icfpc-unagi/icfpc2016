@@ -47,6 +47,12 @@ const typename Collection::value_type::second_type* FindOrNull(
   return &it->second;
 }
 
+void StripNewLine(string* line) {
+  while (!line->empty() && (line->back() == '\n' || line->back() == '\r')) {
+    line->erase(line->end() - 1, line->end());
+  }
+}
+
 } // namespace
 
 class Stream {
@@ -344,13 +350,14 @@ class StreamController {
         Stream::Poll(streams_, 0 /* stream_id */);
         line = master->ReadLine();
       }
-      if (line.back() == '\n') { line.erase(line.end() - 1, line.end()); }
+      StripNewLine(&line);
       LOG(INFO) << "Master command: " << line;
       vector<string> args =
           strings::Split(line, strings::delimiter::Limit(" ", 1));
       auto* command = FindOrNull(commands_, args.front());
       if (command == nullptr) {
-        LOG(WARNING) << "Invalid command: " << line;
+        LOG(INFO) << "Invalid command: " << args.front();
+        master->WriteLine("INVALID_ARGUMENT Invalid command: " + args.front());
         continue;
       }
       LOG(INFO) << "Calling " << args.front() << "...";
@@ -469,9 +476,7 @@ class StreamController {
     if (result.empty()) {
       return "UNAVAILABLE";
     }
-    if (result.back() == '\n') {
-      result.erase(result.end() - 1, result.end());
-    }
+    StripNewLine(&result);
     return StrCat("OK ", stream_id, " ", result);
   }
 

@@ -93,3 +93,37 @@ test::ninestream_eof() {
   ASSERT_STREQ 'OK' "$(call 'exit')"
   wait "${PID}"
 }
+
+test::ninestream_exec() {
+  local stdin="$(sub::tmpfile)"
+  local stdout="$(sub::tmpfile)"
+  local line=''
+  mkfifo "${stdin}"
+  mkfifo "${stdout}"
+
+  setup
+  ASSERT_STREQ 'OK' \
+      "$(call "exec { cat <${stdin} & }; cat >${stdout}; wait")"
+  exec 4>"${stdin}"
+  exec 3<"${stdout}"
+
+  echo 'run 3 bash' >&4
+  IFS='' read line <&3
+  EXPECT_EQ 'OK 1 2 3' "${line}"
+  echo 'write 2 echo foo' >&4
+  IFS='' read line <&3
+  EXPECT_EQ 'OK' "${line}"
+  echo 'write -1 exit' >&4
+  IFS='' read line <&3
+  EXPECT_EQ 'OK' "${line}"
+  echo 'read -1' >&4
+  IFS='' read line <&3
+  EXPECT_EQ 'OK 2 foo' "${line}"
+  echo 'read -1' >&4
+  IFS='' read line <&3
+  EXPECT_EQ 'DEADLINE_EXCEEDED No ready stream.' "${line}"
+  echo 'exit' >&4
+  IFS='' read line <&3
+  EXPECT_EQ 'OK' "${line}"
+  wait "${PID}"
+}
