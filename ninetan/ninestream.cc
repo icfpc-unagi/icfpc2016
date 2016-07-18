@@ -13,6 +13,7 @@
 
 DEFINE_string(master, "", "Command for a master.");
 DEFINE_string(worker, "", "Command for a worker.");
+DEFINE_bool(communicate, false, "Enable STDIO communication.");
 DEFINE_int32(replicas, 1, "# of worker replicas.");
 DEFINE_bool(debug, false, "Output master I/O.");
 
@@ -62,9 +63,17 @@ void StripNewLine(string* line) {
 
 class Stream {
  public:
-  enum Direction {
+  enum PipeDirection {
     READ = 0,
     WRITE = 1,
+  };
+
+  enum StreamType {
+    UNKNOWN_TYPE = 0,
+    ALL_TYPE = 1,
+    MASTER = 2,
+    WORKER = 3,
+    COMMUNICATOR = 4,
   };
 
   ~Stream() {
@@ -72,6 +81,9 @@ class Stream {
       kill(pid_, SIGKILL);
     }
   }
+
+  int pid() const { return pid_; }
+  StreamType stream_type() const { return stream_type_; }
 
   // NOTE: Terminate does intentionally not use const because this affects
   // the stream's process.
@@ -104,8 +116,8 @@ class Stream {
     stdout_buffer_.clear();
   }
 
-  static std::unique_ptr<Stream> NewInteractiveStream() {
-    std::unique_ptr<Stream> stream(new Stream(""));
+  static std::unique_ptr<Stream> NewInteractiveStream(StreamType stream_type) {
+    std::unique_ptr<Stream> stream(new Stream(stream_type, ""));
     stream->pid_ = 0;
     stream->stdin_ = 1;
     stream->stdout_ = 0;
@@ -114,8 +126,9 @@ class Stream {
     return stream;
   }
 
-  static std::unique_ptr<Stream> NewStream(const string& command) {
-    std::unique_ptr<Stream> stream(new Stream(command));
+  static std::unique_ptr<Stream> NewStream(
+      StreamType stream_type, const string& command) {
+    std::unique_ptr<Stream> stream(new Stream(stream_type, command));
     stream->Run();
     return stream;
   }
@@ -262,7 +275,8 @@ class Stream {
   }
 
  private:
-  Stream(const string& command) : command_(command) {}
+  Stream(StreamType stream_type, const string& command)
+      : stream_type_(stream_type), command_(command) {}
 
   void Run() {
     int pipe_c2p[2];
@@ -324,6 +338,7 @@ class Stream {
     CHECK_GE(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | FD_CLOEXEC), 0);
   }
 
+  StreamType stream_type_;
   string command_;
   int pid_;
   int stdin_;
@@ -342,13 +357,18 @@ class StreamController {
     signal(SIGPIPE, SIG_IGN);
 
     if (command.empty()) {
-      streams_.push_back(Stream::NewInteractiveStream());
+      streams_.push_back(Stream::NewInteractiveStream(Stream::MASTER));
     } else {
-      streams_.push_back(Stream::NewStream(command));
+      streams_.push_back(Stream::NewStream(Stream::MASTER, command));
+    }
+    if (FLAGS_communicate) {
+      CHECK(!command.empty())
+          << "command must be given to communicate via standard I/O.";
+      streams_.push_back(Stream::NewInteractiveStream(Stream::COMMUNICATOR));
     }
     if (!FLAGS_worker.empty()) {
       for (int i = 0; i < FLAGS_replicas; i++) {
-        streams_.push_back(Stream::NewStream(FLAGS_worker));
+        streams_.push_back(Stream::NewStream(Stream::WORKER, FLAGS_worker));
       }
     }
 
@@ -402,7 +422,7 @@ class StreamController {
     streams_[0]->WriteLine("OK");
     streams_[0]->Terminate();
     streams_[0]->Kill(WallTimer::GetTimeInMicroSeconds() + 1000000);
-    streams_[0] = Stream::NewStream(command);
+    streams_[0] = Stream::NewStream(Stream::MASTER, command);
     return "OK";
   }
 
@@ -434,7 +454,7 @@ class StreamController {
     }
     string result = "OK";
     for (int i = 0; i < replicas; i++) {
-      streams_.push_back(Stream::NewStream(args[1]));
+      streams_.push_back(Stream::NewStream(Stream::WORKER, args[1]));
       result += StringPrintf(" %lu", streams_.size() - 1);
     }
     return result;
@@ -524,8 +544,15 @@ class StreamController {
 
   string List(const string& command) {
     string result = "OK";
-    for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
-      if (streams_[stream_id]->IsRunning()) {
+    Stream::StreamType stream_type =
+        command.empty() ? Stream::WORKER : GetStreamType(command);
+    if (stream_type == Stream::UNKNOWN_TYPE) {
+      return "INVALID_ARGUMENT Unknown stream type: " + command;
+    }
+    for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
+      if ((stream_type == streams_[stream_id]->stream_type() ||
+           stream_type == Stream::ALL_TYPE) &&
+          streams_[stream_id]->IsRunning()) {
         result += StrCat(" ", stream_id);
       }
     }
@@ -547,6 +574,20 @@ class StreamController {
     }
     return StrCat("OK ", command, " ", definition->usage, " ... ",
                   definition->description);
+  }
+
+  string Communicate(const string& command) {
+    if (!command.empty()) {
+      return "INVALID_ARGUMENT communicate takes no arguments.";
+    }
+    for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
+      if (streams_[stream_id]->IsRunning() && streams_[stream_id]->pid() == 0) {
+        return StrCat("RESOURCE_EXHAUSTED Stream ", stream_id,
+                      " already uses STDIO.");
+      }
+    }
+    streams_.push_back(Stream::NewInteractiveStream(Stream::COMMUNICATOR));
+    return StrCat("OK ", streams_.size() - 1);
   }
 
  private:
@@ -575,6 +616,14 @@ class StreamController {
     return stream_id;
   }
 
+  static Stream::StreamType GetStreamType(const string& value) {
+    if (value == "all") { return Stream::ALL_TYPE; }
+    if (value == "master") { return Stream::MASTER; }
+    if (value == "worker") { return Stream::WORKER; }
+    if (value == "communicator") { return Stream::COMMUNICATOR; }
+    return Stream::UNKNOWN_TYPE;
+  }
+
   const map<string, Command> commands_ = {
       {"run",
        Command{"<# of replicas> <command...>",
@@ -601,6 +650,9 @@ class StreamController {
       {"list",
        Command{"", "List streams that do not explicitly reach EOF.",
                &StreamController::List}},
+      {"communicate",
+       Command{"", "Creates a stream to communicate.",
+               &StreamController::Communicate}},
       {"exit",
        Command{"(<exit code>)",
                "Exits with the exit code.  Exits with 0 if not explicitly "
