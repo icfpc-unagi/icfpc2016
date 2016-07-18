@@ -2,8 +2,11 @@
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <deque>
+#include <memory>
 
 #include "base/base.h"
 #include "base/timer.h"
