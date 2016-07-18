@@ -1,5 +1,5 @@
 test:
-	bazel test -c opt --test_output=all //...
+	bazel test -c opt --test_output=errors //...
 .PHONY: test
 
 build:
