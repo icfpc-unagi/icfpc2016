@@ -86,14 +86,18 @@ class Stream {
   int pid() const { return pid_; }
   StreamType stream_type() const { return stream_type_; }
 
+  // TODO(imos): Deprecate this function.
   bool MatchStreamType(int stream_predicate) const {
-    // TODO(imos): Implement this.
-    if (0 <= stream_predicate) { return false; }
-
+    if (0 <= stream_predicate) { return stream_id_ == stream_predicate; }
     StreamType stream_predicate_type =
         static_cast<StreamType>(-stream_predicate);
     if (stream_predicate_type == ALL_TYPE) { return true; }
     return stream_predicate_type == stream_type();
+  }
+
+  bool MatchStreamType(StreamType stream_predicate) const {
+    if (stream_predicate == ALL_TYPE) { return true; }
+    return stream_predicate == stream_type();
   }
 
   // NOTE: Terminate does intentionally not use const because this affects
@@ -127,8 +131,9 @@ class Stream {
     stdout_buffer_.clear();
   }
 
-  static std::unique_ptr<Stream> NewInteractiveStream(StreamType stream_type) {
-    std::unique_ptr<Stream> stream(new Stream(stream_type, ""));
+  static std::unique_ptr<Stream> NewInteractiveStream(
+      StreamType stream_type, int stream_id) {
+    std::unique_ptr<Stream> stream(new Stream(stream_type, stream_id, ""));
     stream->pid_ = 0;
     stream->stdin_ = 1;
     stream->stdout_ = 0;
@@ -138,8 +143,8 @@ class Stream {
   }
 
   static std::unique_ptr<Stream> NewStream(
-      StreamType stream_type, const string& command) {
-    std::unique_ptr<Stream> stream(new Stream(stream_type, command));
+      StreamType stream_type, int stream_id, const string& command) {
+    std::unique_ptr<Stream> stream(new Stream(stream_type, stream_id, command));
     stream->Run();
     return stream;
   }
@@ -238,8 +243,7 @@ class Stream {
           pollfd.revents = pollfd.events;
         }
         if (stream->stdout_ >= 0 &&
-            (stream_index == stream_predicate ||
-             stream->MatchStreamType(stream_predicate))) {
+            stream->MatchStreamType(stream_predicate)) {
           fds.emplace_back();
           auto& pollfd = fds.back();
           pollfd.fd = stream->stdout_;
@@ -284,8 +288,8 @@ class Stream {
   }
 
  private:
-  Stream(StreamType stream_type, const string& command)
-      : stream_type_(stream_type), command_(command) {}
+  Stream(StreamType stream_type, int stream_id, const string& command)
+      : stream_type_(stream_type), stream_id_(stream_id), command_(command) {}
 
   void Run() {
     int pipe_c2p[2];
@@ -348,8 +352,9 @@ class Stream {
   }
 
   StreamType stream_type_;
+  int stream_id_;
   string command_;
-  int pid_;
+  int pid_ = -1;
   int stdin_;
   int stdout_;
   std::deque<char> stdin_buffer_;
@@ -366,18 +371,22 @@ class StreamController {
     signal(SIGPIPE, SIG_IGN);
 
     if (command.empty()) {
-      streams_.push_back(Stream::NewInteractiveStream(Stream::MASTER));
+      streams_.push_back(Stream::NewInteractiveStream(
+          Stream::MASTER, streams_.size()));
     } else {
-      streams_.push_back(Stream::NewStream(Stream::MASTER, command));
+      streams_.push_back(Stream::NewStream(
+          Stream::MASTER, streams_.size(), command));
     }
     if (FLAGS_communicate) {
       CHECK(!command.empty())
           << "command must be given to communicate via standard I/O.";
-      streams_.push_back(Stream::NewInteractiveStream(Stream::COMMUNICATOR));
+      streams_.push_back(Stream::NewInteractiveStream(
+          Stream::COMMUNICATOR, streams_.size()));
     }
     if (!FLAGS_worker.empty()) {
       for (int i = 0; i < FLAGS_replicas; i++) {
-        streams_.push_back(Stream::NewStream(Stream::WORKER, FLAGS_worker));
+        streams_.push_back(Stream::NewStream(
+            Stream::WORKER, streams_.size(), FLAGS_worker));
       }
     }
 
@@ -431,7 +440,7 @@ class StreamController {
     streams_[0]->WriteLine("OK");
     streams_[0]->Terminate();
     streams_[0]->Kill(WallTimer::GetTimeInMicroSeconds() + 1000000);
-    streams_[0] = Stream::NewStream(Stream::MASTER, command);
+    streams_[0] = Stream::NewStream(Stream::MASTER, 0, command);
     return "OK";
   }
 
@@ -463,7 +472,8 @@ class StreamController {
     }
     string result = "OK";
     for (int i = 0; i < replicas; i++) {
-      streams_.push_back(Stream::NewStream(Stream::WORKER, args[1]));
+      streams_.push_back(Stream::NewStream(
+          Stream::WORKER, streams_.size(), args[1]));
       result += StringPrintf(" %lu", streams_.size() - 1);
     }
     return result;
@@ -478,19 +488,11 @@ class StreamController {
       return error;
     }
     string result = "OK";
-    if (stream_predicate < 0) {
-      for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
-        if (streams_[stream_id]->MatchStreamType(stream_predicate) &&
-            streams_[stream_id]->WriteLine(args[1])) {
-          result += StrCat(" ", stream_id);
-        }
+    for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
+      if (streams_[stream_id]->MatchStreamType(stream_predicate) &&
+          streams_[stream_id]->WriteLine(args[1])) {
+        result += StrCat(" ", stream_id);
       }
-    } else if (0 <= stream_predicate && stream_predicate < streams_.size()) {
-      if (streams_[stream_predicate]->WriteLine(args[1])) {
-        result += StrCat(" ", stream_predicate);
-      }
-    } else {
-      return "INVALID_ARGUMENT Invalid stream predicate: " + args[0];
     }
     return result;
   }
@@ -536,37 +538,28 @@ class StreamController {
 
   string Kill(const string& command) {
     string error;
-    int stream_predicate = GetStreamId(command, &error);
+    vector<int> stream_ids = GetStreamIds(command, &error);
     if (!error.empty()) {
       return error;
     }
-    if (stream_predicate < 0) {
-      for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
-        if (streams_[stream_id]->MatchStreamType(stream_id)) {
-          streams_[stream_id]->Kill(0);
-        }
-      }
-    } else if (0 <= stream_predicate && stream_predicate < streams_.size()) {
-      streams_[stream_predicate]->Kill(0);
-    } else {
-      return "INVALID_ARGUMENT Invalid stream predicate: " + command;
+    string result = "OK";
+    for (int stream_id : stream_ids) {
+      streams_[stream_id]->Kill(0);
     }
     return "OK";
   }
 
   string List(const string& command) {
-    string result = "OK";
-    Stream::StreamType stream_type =
-        command.empty() ? Stream::WORKER : GetStreamType(command);
-    if (stream_type == Stream::UNKNOWN_TYPE) {
-      return "INVALID_ARGUMENT Unknown stream type: " + command;
+    string error;
+    // TODO(imos): Make the first argument required.
+    vector<int> stream_ids =
+        GetStreamIds(command.empty() ? "worker" : command, &error);
+    if (!error.empty()) {
+      return error;
     }
-    for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
-      if ((stream_type == streams_[stream_id]->stream_type() ||
-           stream_type == Stream::ALL_TYPE) &&
-          streams_[stream_id]->IsRunning()) {
-        result += StrCat(" ", stream_id);
-      }
+    string result = "OK";
+    for (int stream_id : stream_ids) {
+      result += StrCat(" ", stream_id);
     }
     return result;
   }
@@ -598,7 +591,8 @@ class StreamController {
                       " already uses STDIO.");
       }
     }
-    streams_.push_back(Stream::NewInteractiveStream(Stream::COMMUNICATOR));
+    streams_.push_back(Stream::NewInteractiveStream(
+        Stream::COMMUNICATOR, streams_.size()));
     return StrCat("OK ", streams_.size() - 1);
   }
 
@@ -636,10 +630,39 @@ class StreamController {
     return stream_id;
   }
 
+  vector<int> GetStreamIds(const string& stream_predicate, string* error) {
+    Stream::StreamType stream_type = GetStreamType(stream_predicate);
+    if (stream_type != Stream::UNKNOWN_TYPE) {
+      vector<int> stream_ids;
+      for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
+        if (streams_[stream_id]->IsRunning() &&
+            streams_[stream_id]->MatchStreamType(stream_type)) {
+          stream_ids.push_back(stream_id);
+        }
+      }
+      return stream_ids;
+    }
+
+    int stream_id;
+    if (!safe_strto32(stream_predicate, &stream_id)) {
+      if (error != nullptr) {
+        *error = "INVALID_ARGUMENT Invalid stream ID: " + stream_predicate;
+      }
+      return {};
+    }
+    if (stream_id < 0 || (int)streams_.size() <= stream_id) {
+      if (error != nullptr) {
+        *error = StrCat("NOT_FOUND Out of stream ID range: ", stream_id);
+      }
+      return {};
+    }
+    return {stream_id};
+  }
+
   static Stream::StreamType GetStreamType(const string& value) {
     if (value == "all") { return Stream::ALL_TYPE; }
     if (value == "master") { return Stream::MASTER; }
-    if (value == "worker") { return Stream::WORKER; }
+    if (value == "worker" || value == "-1") { return Stream::WORKER; }
     if (value == "communicator") { return Stream::COMMUNICATOR; }
     return Stream::UNKNOWN_TYPE;
   }
@@ -672,7 +695,7 @@ class StreamController {
                "List streams that do not explicitly reach EOF.",
                &StreamController::List}},
       {"communicate",
-       Command{"", "Creates a stream to communicate.",
+       Command{"", "Creates a stream to communicate via standard I/O.",
                &StreamController::Communicate}},
       {"exit",
        Command{"(<exit code>)",
