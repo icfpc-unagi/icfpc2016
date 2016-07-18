@@ -317,6 +317,9 @@ class StreamController {
     Stream* master = streams_[0].get();
     CHECK(master != nullptr);
     while (!master->IsEof() && exit_code_ < 0) {
+      // Updates master because "exec" may replace it.
+      master = streams_[0].get();
+      CHECK(master != nullptr);
       LOG(INFO) << "Waiting for master.";
       string line = master->ReadLine();
       while (line.empty() && !master->IsEof()) {
@@ -335,7 +338,11 @@ class StreamController {
       LOG(INFO) << "Calling " << args.front() << "...";
       string result = command->method(this, args.size() >= 2 ? args[1] : "");
       LOG(INFO) << "Result: " << result;
-      master->WriteLine(result);
+      // Check if the master process is not replaced because exec may have
+      // terminated the master process.
+      if (streams_[0].get() == master) {
+        master->WriteLine(result);
+      }
     }
     for (auto& stream : streams_) {
       stream->Terminate();
@@ -346,15 +353,13 @@ class StreamController {
     }
   }
 
-  bool ParseCommand(const string& method, string* command) {
-    if (TryStripPrefixString(*command, method + " ", command)) {
-      return true;
-    }
-    if (*command == method) {
-      command->clear();
-      return true;
-    }
-    return false;
+  string Exec(const string& command) {
+    CHECK_GE(streams_.size(), 1);
+    streams_[0]->WriteLine("OK");
+    streams_[0]->Terminate();
+    streams_[0]->Kill(WallTimer::GetTimeInMicroSeconds() + 1000000);
+    streams_[0] = Stream::NewStream(command);
+    return "OK";
   }
 
   string Exit(const string& command) {
@@ -366,7 +371,7 @@ class StreamController {
       return "OK";
     }
     exit_code_ = -1;
-    return "INVALID_ARGUMENTS exit code must be an integer, but " + command;
+    return "INVALID_ARGUMENT exit code must be an integer, but " + command;
   }
 
   string Run(const string& command) {
@@ -374,13 +379,13 @@ class StreamController {
         strings::Split(command, strings::delimiter::Limit(" ", 1));
     if (args.size() != 2) {
       return StrCat(
-          "INVALID_ARGUMENTS run should have two arguments, but ",
+          "INVALID_ARGUMENT run should have two arguments, but ",
           args.size(), ".");
     }
     int32 replicas = 0;
     if (!safe_strto32(args[0], &replicas)) {
       return StrCat(
-          "INVALID_ARGUMENTS # of replicas should be int32, but '",
+          "INVALID_ARGUMENT # of replicas should be int32, but '",
           args[0], "'.");
     }
     string result = "OK";
@@ -395,11 +400,19 @@ class StreamController {
     vector<string> args =
         strings::Split(command, strings::delimiter::Limit(" ", 1));
     string error;
-    int stream_id = GetStreamId(args[0], &error);
-    if (stream_id < 0) {
-      return StrCat("NOT_FOUND ", error);
+    int stream_predicate = GetStreamId(args[0], &error);
+    if (!error.empty()) {
+      return error;
     }
-    streams_[stream_id]->WriteLine(args[1]);
+    if (stream_predicate == -1) {
+      for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
+        streams_[stream_id]->WriteLine(args[1]);
+      }
+    } else if (0 <= stream_predicate && stream_predicate < streams_.size()) {
+      streams_[stream_predicate]->WriteLine(args[1]);
+    } else {
+      return "INVALID_ARGUMENT Invalid stream predicate: " + args[0];
+    }
     return "OK";
   }
 
@@ -407,51 +420,33 @@ class StreamController {
     vector<string> args =
         strings::Split(command, strings::delimiter::Limit(" ", 1));
     string error;
-    int stream_id = GetStreamId(args[0], &error);
-    if (stream_id < 0) {
-      return StrCat("NOT_FOUND ", error);
+    int stream_predicate = GetStreamId(args[0], &error);
+    if (!error.empty()) {
+      return error;
     }
     int32 timeout_in_millis = -1;
     if (args.size() >= 2) {
       if (!safe_strto32(args[1], &timeout_in_millis) ||
           timeout_in_millis <= 0) {
-        return StrCat("INVALID_ARGUMENTS timeout must be a positive integer, ",
+        return StrCat("INVALID_ARGUMENT timeout must be a positive integer, ",
                       "but ", args[1]);
       }
     }
-    return ReadInternal(stream_id, timeout_in_millis);
-  }
 
-  string ReadAll(const string& command) {
-    int32 timeout_in_millis = -1;
-    if (!command.empty()) {
-      if (!safe_strto32(command, &timeout_in_millis) ||
-          timeout_in_millis <= 0) {
-        return StrCat("INVALID_ARGUMENT timeout must be a positive integer, ",
-                      "but ", command);
-      }
-    }
-    return ReadInternal(-1, timeout_in_millis);
-  }
-
-  string ReadInternal(int stream_predicate, int timeout_in_millis) {
-    bool no_deadline = timeout_in_millis < 0;
+    bool has_deadline = timeout_in_millis >= 0;
     int64 deadline_in_micros =
         WallTimer::GetTimeInMicroSeconds() + timeout_in_millis * 1000LL;
     string result;
-    while (result.empty()) {
+    int stream_id;
+    while (result.empty() && (!has_deadline || timeout_in_millis >= 0)) {
       timeout_in_millis = (deadline_in_micros + 999 -
                            WallTimer::GetTimeInMicroSeconds()) / 1000;
-      int stream_id = Stream::Poll(
-          streams_, stream_predicate,
-          no_deadline ? -1 : max(timeout_in_millis, 0));
+      stream_id = Stream::Poll(streams_, stream_predicate,
+                               has_deadline ? max(timeout_in_millis, 1) : -1);
       if (stream_id < 0) {
         return "DEADLINE_EXCEEDED No ready stream.";
       }
       result = streams_[stream_id]->ReadLine();
-      if (!no_deadline && result.empty() && timeout_in_millis < 0) {
-        return "DEADLINE_EXCEEDED Result is delayed.";
-      }
     }
     if (result.empty()) {
       return "UNAVAILABLE";
@@ -459,10 +454,12 @@ class StreamController {
     if (result.back() == '\n') {
       result.erase(result.end() - 1, result.end());
     }
-    return "OK " + result;
+    return StrCat("OK ", stream_id, " ", result);
   }
 
  private:
+  const int kInvalidStream = -2;
+
   struct Command {
     string usage;
     string description;
@@ -473,24 +470,29 @@ class StreamController {
     int stream_id;
     if (!safe_strto32(stream_key, &stream_id)) {
       if (error != nullptr) {
-        *error = "Invalid stream ID: " + stream_key;
+        *error = "INVALID_ARGUMENT Invalid stream ID: " + stream_key;
       }
-      return -1;
+      return kInvalidStream;
     }
-    if (stream_id < 0 || streams_.size() <= stream_id) {
+    if (stream_id <= kInvalidStream || streams_.size() <= stream_id) {
       if (error != nullptr) {
-        *error = StrCat("Out of stream ID range: ", stream_id);
+        *error = StrCat("NOT_FOUND Out of stream ID range: ", stream_id);
       }
-      return -1;
+      return kInvalidStream;
     }
     return stream_id;
   }
 
-  map<string, Command> commands_ = {
+  const map<string, Command> commands_ = {
       {"run",
        Command{"<# of replicas> <command> <args>...",
                "Spawns child processes, and returns stream IDs",
                &StreamController::Run}},
+      {"exec",
+       Command{"<args>...",
+               "Spawns a master process.  Kills the previous master process "
+               "if exists.  Always returns \"OK\".",
+               &StreamController::Exec}},
       {"write",
        Command{"<stream ID> <message>",
                "Writes a message to the stream.",
@@ -499,10 +501,6 @@ class StreamController {
        Command{"<stream ID> (<timeout>)",
                "Read a line from the stream.",
                &StreamController::Read}},
-      {"readall",
-       Command{"(<timeout>)",
-               "Read a line from some stream.",
-               &StreamController::ReadAll}},
       {"exit",
        Command{"(<exit code>)",
                "Exits with the exit code.  Exits with 0 if not explicitly "
