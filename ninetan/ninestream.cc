@@ -320,6 +320,10 @@ class Stream {
     CHECK_GE(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK), 0);
   }
 
+  static void SetCloseExec(int fd) {
+    CHECK_GE(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | FD_CLOEXEC), 0);
+  }
+
   string command_;
   int pid_;
   int stdin_;
@@ -349,11 +353,9 @@ class StreamController {
     }
 
     CHECK_GE(streams_.size(), 1) << "No master stream is found.";
-    Stream* master = streams_[0].get();
-    CHECK(master != nullptr);
-    while (!master->IsEof() && exit_code_ < 0) {
+    while (streams_[0] != nullptr && !streams_[0]->IsEof() && exit_code_ < 0) {
       // Updates master because "exec" may replace it.
-      master = streams_[0].get();
+      Stream* master = streams_[0].get();
       CHECK(master != nullptr);
       LOG(INFO) << "Waiting for master.";
       string line = master->ReadLine();
@@ -608,6 +610,8 @@ class StreamController {
   };
   vector<std::unique_ptr<Stream>> streams_;
   int exit_code_ = -1;
+
+  DISALLOW_COPY_AND_ASSIGN(StreamController);
 };
 
 }  // namespace ninetan

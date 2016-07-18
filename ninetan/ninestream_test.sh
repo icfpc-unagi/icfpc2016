@@ -68,6 +68,7 @@ test::ninestream_kill() {
   setup
   ASSERT_STREQ 'OK 1 2 3 4' "$(call 'run 4 bash')"
   ASSERT_STREQ 'OK 4' "$(call 'write 4 exit')"
+  sleep 0.05
   ASSERT_STREQ 'OK 1 2 3' "$(call 'write -1 echo foo')"
   ASSERT_STREQ 'OK' "$(call 'kill 2')"
   ASSERT_STREQ 'OK 1 foo' "$(call 'read 1')"
