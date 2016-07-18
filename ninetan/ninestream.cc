@@ -474,7 +474,7 @@ class StreamController {
       }
       return kInvalidStream;
     }
-    if (stream_id <= kInvalidStream || streams_.size() <= stream_id) {
+    if (stream_id <= kInvalidStream || (int)streams_.size() <= stream_id) {
       if (error != nullptr) {
         *error = StrCat("NOT_FOUND Out of stream ID range: ", stream_id);
       }
