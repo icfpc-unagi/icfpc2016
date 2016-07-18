@@ -11,6 +11,11 @@
 #include "base/base.h"
 #include "base/timer.h"
 
+DEFINE_string(master, "", "Command for a master.");
+DEFINE_string(worker, "", "Command for a worker.");
+DEFINE_int32(replicas, 1, "# of worker replicas.");
+DEFINE_bool(debug, false, "Output master I/O.");
+
 namespace ninetan {
 namespace {
 
@@ -337,6 +342,11 @@ class StreamController {
     } else {
       streams_.push_back(Stream::NewStream(command));
     }
+    if (!FLAGS_worker.empty()) {
+      for (int i = 0; i < FLAGS_replicas; i++) {
+        streams_.push_back(Stream::NewStream(FLAGS_worker));
+      }
+    }
 
     CHECK_GE(streams_.size(), 1) << "No master stream is found.";
     Stream* master = streams_[0].get();
@@ -353,6 +363,9 @@ class StreamController {
       }
       StripNewLine(&line);
       LOG(INFO) << "Master command: " << line;
+      if (FLAGS_debug) {
+        puts(line.c_str());
+      }
       vector<string> args =
           strings::Split(line, strings::delimiter::Limit(" ", 1));
       auto* command = FindOrNull(commands_, args.front());
@@ -364,6 +377,7 @@ class StreamController {
       LOG(INFO) << "Calling " << args.front() << "...";
       string result = command->method(this, args.size() >= 2 ? args[1] : "");
       LOG(INFO) << "Result: " << result;
+      puts(result.c_str());
       // Check if the master process is not replaced because exec may have
       // terminated the master process.
       if (streams_[0].get() == master) {
@@ -599,6 +613,6 @@ class StreamController {
 int main(int argc, char **argv) {
   ParseCommandLineFlags(&argc, &argv);
   ninetan::StreamController stream_master;
-  stream_master.Init("");
+  stream_master.Init(FLAGS_master);
   return 0;
 }
