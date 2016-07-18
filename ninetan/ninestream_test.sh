@@ -50,3 +50,16 @@ test::ninestream_readall() {
   ASSERT_STREQ 'OK' "$(call 'exit')"
   wait "${PID}"
 }
+
+test::ninestream_writeall() {
+  setup
+  ASSERT_STREQ 'OK 1 2 3' "$(call 'run 3 bash')"
+  ASSERT_STREQ 'OK' "$(call 'write -1 echo foo')"
+  ASSERT_STREQ 'OK 1 foo' "$(call 'read 1')"
+  ASSERT_STREQ 'OK 2 foo' "$(call 'read 2')"
+  ASSERT_STREQ 'OK 3 foo' "$(call 'read 3')"
+  ASSERT_STREQ 'DEADLINE_EXCEEDED No ready stream.' "$(call 'read -1 10')"
+  ASSERT_STREQ 'OK' "$(call 'write -1 exit')"
+  ASSERT_STREQ 'OK' "$(call 'exit')"
+  wait "${PID}"
+}
