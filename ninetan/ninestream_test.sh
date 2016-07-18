@@ -88,6 +88,7 @@ test::ninestream_eof() {
   ASSERT_STREQ 'OK 2' "$(call 'write 2 exit')"
   ASSERT_STREQ 'OK 4' "$(call 'write 4 echo foo')"
   ASSERT_STREQ 'OK 4' "$(call 'write 4 exit')"
+  sleep 0.05
   ASSERT_STREQ 'OK 1 2 3 4' "$(call 'list')"
   ASSERT_STREQ 'OK 4 foo' "$(call 'read -1')"
   ASSERT_STREQ 'OK 1 3 4' "$(call 'list')"
