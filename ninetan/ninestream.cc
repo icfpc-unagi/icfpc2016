@@ -142,6 +142,8 @@ class Stream {
         return "";
       } else if (size == 0) {
         LOG(INFO) << "Reached EOF.";
+        pid_ = -1;
+        stdin_ = -1;
         stdout_ = -1;
         break;
       }
@@ -158,8 +160,8 @@ class Stream {
     return "";
   }
 
-  void Write(const string& data) {
-    if (stdin_ < 0) { return; }
+  bool Write(const string& data) {
+    if (stdin_ < 0) { return false; }
     if (!data.empty()) {
       stdin_buffer_.insert(stdin_buffer_.end(), data.begin(), data.end());
     }
@@ -173,18 +175,17 @@ class Stream {
 
     int size = write(stdin_, chunk, sizeof(chunk));
     if (size < 0) {
-      if (errno != EAGAIN) {
-        LOG(INFO) << "Stream is broken: " << strerror(errno);
-        stdin_ = -1;
-      }
-      return;
+      if (errno == EAGAIN) { return true; }
+      LOG(INFO) << "Stream is broken: " << strerror(errno);
+      stdin_ = -1;
+      return false;
     }
     stdin_buffer_.erase(stdin_buffer_.begin(), stdin_buffer_.begin() + size);
+    return true;
   }
 
-  void WriteLine(const string& data) {
-    Write(data);
-    Write("\n");
+  bool WriteLine(const string& data) {
+    return Write(data) && Write("\n");
   }
 
   // stream_id specifies the stream to poll.  If -1 is given, this polls all
@@ -429,16 +430,21 @@ class StreamController {
     if (!error.empty()) {
       return error;
     }
+    string result = "OK";
     if (stream_predicate == -1) {
       for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
-        streams_[stream_id]->WriteLine(args[1]);
+        if (streams_[stream_id]->WriteLine(args[1])) {
+          result += StrCat(" ", stream_id);
+        }
       }
     } else if (0 <= stream_predicate && stream_predicate < streams_.size()) {
-      streams_[stream_predicate]->WriteLine(args[1]);
+      if (streams_[stream_predicate]->WriteLine(args[1])) {
+        result += StrCat(" ", stream_predicate);
+      }
     } else {
       return "INVALID_ARGUMENT Invalid stream predicate: " + args[0];
     }
-    return "OK";
+    return result;
   }
 
   string Read(const string& command) {
@@ -508,6 +514,23 @@ class StreamController {
     return result;
   }
 
+  string Help(const string& command) {
+    string result = "OK";
+    if (command.empty()) {
+      for (const auto& key_and_command : commands_) {
+        result += " " + key_and_command.first;
+      }
+      return result;
+    }
+
+    auto* definition = FindOrNull(commands_, command);
+    if (definition == nullptr) {
+      return "NOT_FOUND Command is not found: " + command;
+    }
+    return StrCat("OK ", command, " ", definition->usage, " ... ",
+                  definition->description);
+  }
+
  private:
   const int kInvalidStream = -2;
 
@@ -536,34 +559,36 @@ class StreamController {
 
   const map<string, Command> commands_ = {
       {"run",
-       Command{"<# of replicas> <command> <args>...",
-               "Spawns child processes, and returns stream IDs",
+       Command{"<# of replicas> <command...>",
+               "Spawns child processes, and returns stream IDs.",
                &StreamController::Run}},
       {"exec",
-       Command{"<args>...",
+       Command{"<command...>",
                "Spawns a master process.  Kills the previous master process "
                "if exists.  Always returns \"OK\".",
                &StreamController::Exec}},
       {"write",
-       Command{"<stream ID> <message>",
+       Command{"<stream ID> <message...>",
                "Writes a message to the stream.",
                &StreamController::Write}},
       {"read",
-       Command{"<stream ID> (<timeout>)",
-               "Read a line from the stream.",
+       Command{"<stream ID> (<timeout in ms>)",
+               "Reads a line from the stream(s).  Returns DEADLINE_EXCEEDED if "
+               "all of the stream(s) reach EOF.",
                &StreamController::Read}},
       {"kill",
-       Command{"<stream ID> (<timeout>)",
-               "Kill the stream.",
+       Command{"<stream ID> (<timeout in ms>)",
+               "Kills the stream.",
                &StreamController::Kill}},
       {"list",
-       Command{"", "List available streams.",
+       Command{"", "List streams that do not explicitly reach EOF.",
                &StreamController::List}},
       {"exit",
        Command{"(<exit code>)",
                "Exits with the exit code.  Exits with 0 if not explicitly "
                "given.",
                &StreamController::Exit}},
+      {"help", Command{"", "Shows this message.", &StreamController::Help}},
   };
   vector<std::unique_ptr<Stream>> streams_;
   int exit_code_ = -1;
