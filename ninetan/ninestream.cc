@@ -251,6 +251,7 @@ class Stream {
       close(pipe_p2c[READ]);
       close(pipe_c2p[WRITE]);
       execlp("bash", "bash", "-c", command_.c_str());
+      LOG(ERROR) << strerror(errno);
       LOG(FATAL) << "Failed to run command: " << command_;
     }
     close(pipe_p2c[READ]);
