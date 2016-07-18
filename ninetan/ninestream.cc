@@ -74,6 +74,7 @@ class Stream {
     MASTER = 2,
     WORKER = 3,
     COMMUNICATOR = 4,
+    INVALID_TYPE = 5,
   };
 
   ~Stream() {
@@ -84,6 +85,16 @@ class Stream {
 
   int pid() const { return pid_; }
   StreamType stream_type() const { return stream_type_; }
+
+  bool MatchStreamType(int stream_predicate) const {
+    // TODO(imos): Implement this.
+    if (0 <= stream_predicate) { return false; }
+
+    StreamType stream_predicate_type =
+        static_cast<StreamType>(-stream_predicate);
+    if (stream_predicate_type == ALL_TYPE) { return true; }
+    return stream_predicate_type == stream_type();
+  }
 
   // NOTE: Terminate does intentionally not use const because this affects
   // the stream's process.
@@ -206,11 +217,9 @@ class Stream {
     return Write(data) && Write("\n");
   }
 
-  // stream_id specifies the stream to poll.  If -1 is given, this polls all
-  // slave streams.
   static int Poll(const vector<std::unique_ptr<Stream>>& streams,
-                  int stream_id, int timeout = -1) {
-    LOG(INFO) << "Polling " << stream_id << " with " << timeout;
+                  int stream_predicate, int timeout = -1) {
+    LOG(INFO) << "Polling " << stream_predicate << " with " << timeout;
     CHECK_GE(timeout, -1);
     while (true) {
       vector<struct pollfd> fds;
@@ -229,8 +238,8 @@ class Stream {
           pollfd.revents = pollfd.events;
         }
         if (stream->stdout_ >= 0 &&
-            (stream_index == stream_id ||
-             (stream_id == -1 && stream_index > 0))) {
+            (stream_index == stream_predicate ||
+             stream->MatchStreamType(stream_predicate))) {
           fds.emplace_back();
           auto& pollfd = fds.back();
           pollfd.fd = stream->stdout_;
@@ -469,9 +478,10 @@ class StreamController {
       return error;
     }
     string result = "OK";
-    if (stream_predicate == -1) {
-      for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
-        if (streams_[stream_id]->WriteLine(args[1])) {
+    if (stream_predicate < 0) {
+      for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
+        if (streams_[stream_id]->MatchStreamType(stream_predicate) &&
+            streams_[stream_id]->WriteLine(args[1])) {
           result += StrCat(" ", stream_id);
         }
       }
@@ -530,9 +540,11 @@ class StreamController {
     if (!error.empty()) {
       return error;
     }
-    if (stream_predicate == -1) {
-      for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
-        streams_[stream_id]->Kill(0);
+    if (stream_predicate < 0) {
+      for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
+        if (streams_[stream_id]->MatchStreamType(stream_id)) {
+          streams_[stream_id]->Kill(0);
+        }
       }
     } else if (0 <= stream_predicate && stream_predicate < streams_.size()) {
       streams_[stream_predicate]->Kill(0);
@@ -591,7 +603,7 @@ class StreamController {
   }
 
  private:
-  const int kInvalidStream = -2;
+  const int kInvalidStream = -static_cast<int>(Stream::INVALID_TYPE);
 
   struct Command {
     string usage;
@@ -600,6 +612,11 @@ class StreamController {
   };
 
   int GetStreamId(const string& stream_key, string* error) {
+    Stream::StreamType stream_type = GetStreamType(stream_key);
+    if (stream_type != Stream::UNKNOWN_TYPE) {
+      return -static_cast<int>(stream_type);
+    }
+
     int stream_id;
     if (!safe_strto32(stream_key, &stream_id)) {
       if (error != nullptr) {
@@ -607,7 +624,10 @@ class StreamController {
       }
       return kInvalidStream;
     }
-    if (stream_id <= kInvalidStream || (int)streams_.size() <= stream_id) {
+    if (stream_id == -1) {
+      return -static_cast<int>(Stream::WORKER);
+    }
+    if (stream_id < 0 || (int)streams_.size() <= stream_id) {
       if (error != nullptr) {
         *error = StrCat("NOT_FOUND Out of stream ID range: ", stream_id);
       }
@@ -648,7 +668,8 @@ class StreamController {
                "Kills the stream.",
                &StreamController::Kill}},
       {"list",
-       Command{"", "List streams that do not explicitly reach EOF.",
+       Command{"(all|master|worker|communicator)",
+               "List streams that do not explicitly reach EOF.",
                &StreamController::List}},
       {"communicate",
        Command{"", "Creates a stream to communicate.",

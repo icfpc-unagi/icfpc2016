@@ -8,7 +8,7 @@ setup() {
   local stdout="$(sub::tmpfile)"
   mkfifo "${stdin}"
   mkfifo "${stdout}"
-  "${TARGET}" <"${stdin}" >"${stdout}" &
+  "${TARGET}" --alsologtostderr <"${stdin}" >"${stdout}" &
   PID="$!"
   exec 4>"${stdin}"
   exec 3<"${stdout}"
