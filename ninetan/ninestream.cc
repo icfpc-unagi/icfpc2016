@@ -377,7 +377,9 @@ class StreamController {
       LOG(INFO) << "Calling " << args.front() << "...";
       string result = command->method(this, args.size() >= 2 ? args[1] : "");
       LOG(INFO) << "Result: " << result;
-      puts(result.c_str());
+      if (FLAGS_debug) {
+        puts(result.c_str());
+      }
       // Check if the master process is not replaced because exec may have
       // terminated the master process.
       if (streams_[0].get() == master) {
