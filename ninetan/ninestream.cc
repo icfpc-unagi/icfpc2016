@@ -76,9 +76,21 @@ class Stream {
     do {
       int status;
       waitpid(pid_, &status, WNOHANG);
-      if (WIFEXITED(status) || WIFSIGNALED(status)) { return; }
+      if (WIFEXITED(status) || WIFSIGNALED(status)) {
+        Reset();
+        return;
+      }
     } while (WallTimer::GetTimeInMicroSeconds() < deadline_in_micros);
     kill(pid_, SIGKILL);
+    Reset();
+  }
+
+  void Reset() {
+    pid_ = -1;
+    stdin_ = -1;
+    stdout_ = -1;
+    stdin_buffer_.clear();
+    stdout_buffer_.clear();
   }
 
   static std::unique_ptr<Stream> NewInteractiveStream() {
@@ -97,7 +109,13 @@ class Stream {
     return stream;
   }
 
-  bool IsEof() {
+  bool IsRunning() const {
+    if (pid_ < 0) { return false; }
+    if (IsEof()) { return false; }
+    return true;
+  }
+
+  bool IsEof() const {
     return stdout_ < 0 && stdout_buffer_.size() == 0;
   }
 
@@ -457,6 +475,34 @@ class StreamController {
     return StrCat("OK ", stream_id, " ", result);
   }
 
+  string Kill(const string& command) {
+    string error;
+    int stream_predicate = GetStreamId(command, &error);
+    if (!error.empty()) {
+      return error;
+    }
+    if (stream_predicate == -1) {
+      for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
+        streams_[stream_id]->Kill(0);
+      }
+    } else if (0 <= stream_predicate && stream_predicate < streams_.size()) {
+      streams_[stream_predicate]->Kill(0);
+    } else {
+      return "INVALID_ARGUMENT Invalid stream predicate: " + command;
+    }
+    return "OK";
+  }
+
+  string List(const string& command) {
+    string result = "OK";
+    for (int stream_id = 1; stream_id < streams_.size(); stream_id++) {
+      if (streams_[stream_id]->IsRunning()) {
+        result += StrCat(" ", stream_id);
+      }
+    }
+    return result;
+  }
+
  private:
   const int kInvalidStream = -2;
 
@@ -501,6 +547,13 @@ class StreamController {
        Command{"<stream ID> (<timeout>)",
                "Read a line from the stream.",
                &StreamController::Read}},
+      {"kill",
+       Command{"<stream ID> (<timeout>)",
+               "Kill the stream.",
+               &StreamController::Kill}},
+      {"list",
+       Command{"", "List available streams.",
+               &StreamController::List}},
       {"exit",
        Command{"(<exit code>)",
                "Exits with the exit code.  Exits with 0 if not explicitly "
