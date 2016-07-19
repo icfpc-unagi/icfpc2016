@@ -23,3 +23,20 @@ imosh_test(
         "//bin",
     ],
 )
+
+cc_library(
+    name = "ninestream_util",
+    srcs = ["ninestream_util.cc"],
+    hdrs = ["ninestream_util.h"],
+    deps = ["//external:base"],
+)
+
+cc_binary(
+    name = "ninestream_example",
+    srcs = ["ninestream_example.cc"],
+    deps = [
+        ":ninestream_util",
+        "//external:base",
+    ],
+    linkstatic = 1,
+)
