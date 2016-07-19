@@ -84,16 +84,8 @@ class Stream {
   }
 
   int pid() const { return pid_; }
+  int stream_id() const { return stream_id_; }
   StreamType stream_type() const { return stream_type_; }
-
-  // TODO(imos): Deprecate this function.
-  bool MatchStreamType(int stream_predicate) const {
-    if (0 <= stream_predicate) { return stream_id_ == stream_predicate; }
-    StreamType stream_predicate_type =
-        static_cast<StreamType>(-stream_predicate);
-    if (stream_predicate_type == ALL_TYPE) { return true; }
-    return stream_predicate_type == stream_type();
-  }
 
   bool MatchStreamType(StreamType stream_predicate) const {
     if (stream_predicate == ALL_TYPE) { return true; }
@@ -175,39 +167,28 @@ class Stream {
         LOG(INFO) << "Read error: " << strerror(errno);
         return "";
       } else if (size == 0) {
-        LOG(INFO) << "Reached EOF.";
-        pid_ = -1;
-        stdin_ = -1;
+        LOG(INFO) << "Reached EOF."; 
+        // Flush remainings.
+        string result(stdout_buffer_.begin(), stdout_buffer_.end());
         stdout_ = -1;
-        break;
+        stdout_buffer_.clear();
+        return result;
       }
-      for (int i = 0; i < size; i++) {
-        stdout_buffer_.push_back(buf[i]);
-      }
-    }
-    // Flush remainings if the pipe is closed.
-    if (stdout_ < 0) {
-      string result(stdout_buffer_.begin(), stdout_buffer_.end());
-      stdout_buffer_.clear();
-      return result;
+      stdout_buffer_.insert(stdout_buffer_.end(), buf, buf + size);
     }
     return "";
   }
 
   bool Write(const string& data) {
     if (stdin_ < 0) { return false; }
-    if (!data.empty()) {
-      stdin_buffer_.insert(stdin_buffer_.end(), data.begin(), data.end());
-    }
+    stdin_buffer_.insert(stdin_buffer_.end(), data.begin(), data.end());
 
     // Write a shorter one of either the first 128 bytes or everything of
     // the current buffer.
-    char chunk[min(stdin_buffer_.size(), 128UL)];
-    for (int i = 0; i < sizeof(chunk) / sizeof(chunk[0]); i++) {
-      chunk[i] = stdin_buffer_[i];
-    }
-
-    int size = write(stdin_, chunk, sizeof(chunk));
+    vector<char> chunk(
+        stdin_buffer_.begin(),
+        stdin_buffer_.begin() + min(stdin_buffer_.size(), 128UL));
+    int size = write(stdin_, chunk.data(), chunk.size());
     if (size < 0) {
       if (errno == EAGAIN) { return true; }
       LOG(INFO) << "Stream is broken: " << strerror(errno);
@@ -223,65 +204,57 @@ class Stream {
   }
 
   static int Poll(const vector<std::unique_ptr<Stream>>& streams,
-                  int stream_predicate, int timeout = -1) {
-    LOG(INFO) << "Polling " << stream_predicate << " with " << timeout;
+                  const vector<int>& stream_ids, int timeout = -1) {
     CHECK_GE(timeout, -1);
     while (true) {
       vector<struct pollfd> fds;
-      int num_streams = 0;
-      for (int stream_index = 0; stream_index < streams.size();
-           stream_index++) {
-        const Stream* stream = streams[stream_index].get();
-        if (stream == nullptr) continue;
-        if (stream->stdin_ >= 0 &&
-            stream->stdin_buffer_.size() > 0) {
-          fds.emplace_back();
-          auto& pollfd = fds.back();
-          pollfd.fd = stream->stdin_;
-          LOG(INFO) << "Polling stdin: " << pollfd.fd;
-          pollfd.events = POLLOUT;
-          pollfd.revents = pollfd.events;
-        }
-        if (stream->stdout_ >= 0 &&
-            stream->MatchStreamType(stream_predicate)) {
-          fds.emplace_back();
-          auto& pollfd = fds.back();
-          pollfd.fd = stream->stdout_;
-          LOG(INFO) << "Polling stdout: " << pollfd.fd;
-          pollfd.events = POLLPRI | POLLIN;
-          num_streams++;
-        }
+      for (const std::unique_ptr<Stream>& stream : streams) {
+        if (stream->stdin_ < 0 || stream->stdin_buffer_.size() == 0) continue;
+        fds.emplace_back();
+        auto& pollfd = fds.back();
+        pollfd.fd = stream->stdin_;
+        LOG(INFO) << "Polling stdin: " << pollfd.fd;
+        pollfd.events = POLLOUT;
+        pollfd.revents = pollfd.events;
       }
-      map<int, const struct pollfd*> descriptor_to_pollfd;
-      for (const struct pollfd& pollfd : fds) {
-        descriptor_to_pollfd[pollfd.fd] = &pollfd;
+      int num_streams = 0;
+      for (int stream_id : stream_ids) {
+        const std::unique_ptr<Stream>& stream = streams[stream_id];
+        if (stream->stdout_ < 0) continue;
+        fds.emplace_back();
+        auto& pollfd = fds.back();
+        pollfd.fd = stream->stdout_;
+        LOG(INFO) << "Polling stdout: " << pollfd.fd;
+        pollfd.events = POLLPRI | POLLIN;
+        num_streams++;
       }
       if (num_streams == 0) {
         return -1;
       }
 
       int result = poll(fds.data(), fds.size(), timeout);
-      if (result < 0) {
-        LOG(INFO) << "Poll error: " << strerror(errno);
-        return -1;
-      }
-      if (result == 0) {
-        return -1;
-      }
-      // TODO(imos): Add error handling for poll.
-      for (int stream_index = 0; stream_index < streams.size();
-           stream_index++) {
-        Stream* stream = streams[stream_index].get();
-        if (stream == nullptr) continue;
+      // poll times out.
+      if (result == 0) { return -1; }
 
+      if (result < 0) {
+        LOG(ERROR) << "Poll error: " << strerror(errno);
+        return -1;
+      }
+
+      map<int, const struct pollfd*> descriptor_to_pollfd;
+      for (const struct pollfd& pollfd : fds) {
+        descriptor_to_pollfd[pollfd.fd] = &pollfd;
+      }
+      for (const std::unique_ptr<Stream>& stream : streams) {
         auto* pollfd = FindPtrOrNull(descriptor_to_pollfd, stream->stdin_);
         if (pollfd != nullptr && pollfd->revents != 0) {
           stream->Write("");
         }
-
-        pollfd = FindPtrOrNull(descriptor_to_pollfd, stream->stdout_);
+      }
+      for (const std::unique_ptr<Stream>& stream : streams) {
+        auto* pollfd = FindPtrOrNull(descriptor_to_pollfd, stream->stdout_);
         if (pollfd != nullptr && pollfd->revents != 0) {
-          return stream_index;
+          return stream->stream_id();
         }
       }
     }
@@ -298,7 +271,7 @@ class Stream {
     CHECK_EQ(0, pipe(pipe_p2c));
     pid_ = fork();
     if (pid_ < 0) {
-      LOG(FATAL) << "Failed to fork.";
+      LOG(FATAL) << "Failed to fork: " << strerror(errno);
     }
     if (pid_ == 0) {
       close(pipe_p2c[WRITE]);
@@ -319,28 +292,13 @@ class Stream {
     stdout_ = pipe_c2p[READ];
     SetNonBlocking(stdin_);
     SetNonBlocking(stdout_);
+    SetCloseExec(stdin_);
+    SetCloseExec(stdout_);
   }
 
   string DebugString() const {
     return StrCat("stream(pid=", pid_, ", stdin=", stdin_, ", stdout=", stdout_,
                   ", command=", command_, ")");
-  }
-
-  static Stream* Poll(const map<int, Stream*>& descriptor_to_stream) {
-    vector<struct pollfd> fds;
-    for (const auto& descriptor_and_stream : descriptor_to_stream) {
-      fds.emplace_back();
-      auto& pollfd = fds.back();
-      pollfd.fd = descriptor_and_stream.first;
-      pollfd.events = POLLIN;
-      pollfd.revents = 0;
-    };
-    int descriptor = poll(fds.data(), fds.size(), -1);
-    auto it = descriptor_to_stream.find(descriptor);
-    if (it == descriptor_to_stream.end()) {
-      return nullptr;
-    }
-    return it->second;
   }
 
   static void SetNonBlocking(int fd) {
@@ -398,7 +356,7 @@ class StreamController {
       LOG(INFO) << "Waiting for master.";
       string line = master->ReadLine();
       while (line.empty() && !master->IsEof()) {
-        Stream::Poll(streams_, 0 /* stream_id */);
+        Stream::Poll(streams_, {0} /* stream_ids */);
         line = master->ReadLine();
       }
       StripNewLine(&line);
@@ -474,7 +432,7 @@ class StreamController {
     for (int i = 0; i < replicas; i++) {
       streams_.push_back(Stream::NewStream(
           Stream::WORKER, streams_.size(), args[1]));
-      result += StringPrintf(" %lu", streams_.size() - 1);
+      result += StringPrintf(" %d", streams_.back()->stream_id());
     }
     return result;
   }
@@ -483,14 +441,13 @@ class StreamController {
     vector<string> args =
         strings::Split(command, strings::delimiter::Limit(" ", 1));
     string error;
-    int stream_predicate = GetStreamId(args[0], &error);
+    vector<int> stream_ids = GetStreamIds(args[0], &error);
     if (!error.empty()) {
       return error;
     }
     string result = "OK";
-    for (int stream_id = 0; stream_id < streams_.size(); stream_id++) {
-      if (streams_[stream_id]->MatchStreamType(stream_predicate) &&
-          streams_[stream_id]->WriteLine(args[1])) {
+    for (int stream_id : stream_ids) {
+      if (streams_[stream_id]->WriteLine(args[1])) {
         result += StrCat(" ", stream_id);
       }
     }
@@ -501,7 +458,7 @@ class StreamController {
     vector<string> args =
         strings::Split(command, strings::delimiter::Limit(" ", 1));
     string error;
-    int stream_predicate = GetStreamId(args[0], &error);
+    vector<int> stream_ids = GetStreamIds(args[0], &error);
     if (!error.empty()) {
       return error;
     }
@@ -522,7 +479,7 @@ class StreamController {
     while (result.empty() && (!has_deadline || timeout_in_millis >= 0)) {
       timeout_in_millis = (deadline_in_micros + 999 -
                            WallTimer::GetTimeInMicroSeconds()) / 1000;
-      stream_id = Stream::Poll(streams_, stream_predicate,
+      stream_id = Stream::Poll(streams_, stream_ids,
                                has_deadline ? max(timeout_in_millis, 1) : -1);
       if (stream_id < 0) {
         return "DEADLINE_EXCEEDED No ready stream.";
@@ -604,31 +561,6 @@ class StreamController {
     string description;
     std::function<string(StreamController*, const string&)> method;
   };
-
-  int GetStreamId(const string& stream_key, string* error) {
-    Stream::StreamType stream_type = GetStreamType(stream_key);
-    if (stream_type != Stream::UNKNOWN_TYPE) {
-      return -static_cast<int>(stream_type);
-    }
-
-    int stream_id;
-    if (!safe_strto32(stream_key, &stream_id)) {
-      if (error != nullptr) {
-        *error = "INVALID_ARGUMENT Invalid stream ID: " + stream_key;
-      }
-      return kInvalidStream;
-    }
-    if (stream_id == -1) {
-      return -static_cast<int>(Stream::WORKER);
-    }
-    if (stream_id < 0 || (int)streams_.size() <= stream_id) {
-      if (error != nullptr) {
-        *error = StrCat("NOT_FOUND Out of stream ID range: ", stream_id);
-      }
-      return kInvalidStream;
-    }
-    return stream_id;
-  }
 
   vector<int> GetStreamIds(const string& stream_predicate, string* error) {
     Stream::StreamType stream_type = GetStreamType(stream_predicate);
