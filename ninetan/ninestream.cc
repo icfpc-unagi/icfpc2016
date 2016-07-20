@@ -96,6 +96,7 @@ class Stream {
   // the stream's process.
   void Terminate() {
     if (pid_ <= 0) { return; }
+    LOG(INFO) << "Stream[" << stream_id() << "]: Terminating...";
     kill(pid_, SIGTERM);
   }
 
@@ -111,11 +112,13 @@ class Stream {
         return;
       }
     } while (WallTimer::GetTimeInMicroSeconds() < deadline_in_micros);
+    LOG(INFO) << "Stream[" << stream_id() << "]: Killing...";
     kill(pid_, SIGKILL);
     Reset();
   }
 
   void Reset() {
+    LOG(INFO) << "Stream[" << stream_id() << "]: Closed.";
     pid_ = -1;
     stdin_ = -1;
     stdout_ = -1;
@@ -143,8 +146,9 @@ class Stream {
 
   bool IsRunning() const {
     if (pid_ < 0) { return false; }
-    if (IsEof()) { return false; }
-    return true;
+    if (!IsEof()) { return true; }
+    if (stream_type() == COMMUNICATOR && stdin_ >= 0) { return true; }
+    return false;
   }
 
   bool IsEof() const {
@@ -164,10 +168,11 @@ class Stream {
       char buf[1024];
       int size = read(stdout_, buf, sizeof(buf));
       if (size < 0) {
-        LOG(INFO) << "Read error: " << strerror(errno);
+        LOG(INFO) << "Stream[" << stream_id() << "]: Read error: "
+                  << strerror(errno);
         return "";
       } else if (size == 0) {
-        LOG(INFO) << "Reached EOF."; 
+        LOG(INFO) << "Stream[" << stream_id() << "]: STDOUT reached EOF."; 
         // Flush remainings.
         string result(stdout_buffer_.begin(), stdout_buffer_.end());
         stdout_ = -1;
@@ -191,7 +196,8 @@ class Stream {
     int size = write(stdin_, chunk.data(), chunk.size());
     if (size < 0) {
       if (errno == EAGAIN) { return true; }
-      LOG(INFO) << "Stream is broken: " << strerror(errno);
+      LOG(INFO) << "Stream[" << stream_id() << "]: Stream is broken: "
+                << strerror(errno);
       stdin_ = -1;
       return false;
     }
@@ -208,14 +214,14 @@ class Stream {
     CHECK_GE(timeout, -1);
     while (true) {
       vector<struct pollfd> fds;
+      string poll_message;
       for (const std::unique_ptr<Stream>& stream : streams) {
         if (stream->stdin_ < 0 || stream->stdin_buffer_.size() == 0) continue;
         fds.emplace_back();
         auto& pollfd = fds.back();
         pollfd.fd = stream->stdin_;
-        LOG(INFO) << "Polling stdin: " << pollfd.fd;
         pollfd.events = POLLOUT;
-        pollfd.revents = pollfd.events;
+        poll_message += StrCat(" ", stream->stream_id(), "(in)");
       }
       int num_streams = 0;
       for (int stream_id : stream_ids) {
@@ -224,13 +230,15 @@ class Stream {
         fds.emplace_back();
         auto& pollfd = fds.back();
         pollfd.fd = stream->stdout_;
-        LOG(INFO) << "Polling stdout: " << pollfd.fd;
         pollfd.events = POLLPRI | POLLIN;
+        poll_message += StrCat(" ", stream->stream_id(), "(out)");
         num_streams++;
       }
       if (num_streams == 0) {
+        LOG(INFO) << "No streams to poll.";
         return -1;
       }
+      LOG(INFO) << "Polling" << poll_message << "...";
 
       int result = poll(fds.data(), fds.size(), timeout);
       // poll times out.
@@ -280,6 +288,8 @@ class Stream {
       dup2(pipe_c2p[WRITE], 1);
       close(pipe_p2c[READ]);
       close(pipe_c2p[WRITE]);
+      setenv("NINESTREAM_STREAM_ID", StrCat(stream_id()).c_str(), 1);
+      setenv("NINESTREAM_REPLICAS", StrCat(FLAGS_replicas).c_str(), 1);
       int result = execlp("bash", "bash", "-c", command_.c_str(), nullptr);
       if (result < 0) {
         LOG(ERROR) << "execlp error: " << strerror(errno);
@@ -353,14 +363,14 @@ class StreamController {
       // Updates master because "exec" may replace it.
       Stream* master = streams_[0].get();
       CHECK(master != nullptr);
-      LOG(INFO) << "Waiting for master.";
-      string line = master->ReadLine();
+      LOG(INFO) << "Controller: Waiting for master...";
+      string line;
       while (line.empty() && !master->IsEof()) {
         Stream::Poll(streams_, {0} /* stream_ids */);
         line = master->ReadLine();
       }
       StripNewLine(&line);
-      LOG(INFO) << "Master command: " << line;
+      LOG(INFO) << "Stream[0]: Command: " << line;
       if (FLAGS_debug) {
         puts(line.c_str());
       }
@@ -368,13 +378,13 @@ class StreamController {
           strings::Split(line, strings::delimiter::Limit(" ", 1));
       auto* command = FindOrNull(commands_, args.front());
       if (command == nullptr) {
-        LOG(INFO) << "Invalid command: " << args.front();
+        LOG(INFO) << "Controller: Invalid command: " << args.front();
         master->WriteLine("INVALID_ARGUMENT Invalid command: " + args.front());
         continue;
       }
-      LOG(INFO) << "Calling " << args.front() << "...";
+      LOG(INFO) << "Controller: Calling " << args.front() << "...";
       string result = command->method(this, args.size() >= 2 ? args[1] : "");
-      LOG(INFO) << "Result: " << result;
+      LOG(INFO) << "Controller: Result: " << result;
       if (FLAGS_debug) {
         puts(result.c_str());
       }

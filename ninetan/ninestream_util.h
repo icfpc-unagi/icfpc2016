@@ -4,12 +4,26 @@ namespace ninetan {
 
 class StreamUtil {
  public:
+  static constexpr char kCommunicatorStreams[] = "communicator";
   static constexpr char kWorkerStreams[] = "worker";
 
   enum StatusCode {
-    UNKNOWN = 0,
-    OK = 1,
-    INTERNAL_ERROR = 2,
+    OK = 0,
+    CANCELLED = 1,
+    UNKNOWN = 2,
+    INVALID_ARGUMENT = 3,
+    DEADLINE_EXCEEDED = 4,
+    NOT_FOUND = 5,
+    ALREADY_EXISTS = 6,
+    PERMISSION_DENIED = 7,
+    RESOURCE_EXHAUSTED = 8,
+    FAILED_PRECONDITION = 9,
+    ABORTED = 10,
+    OUT_OF_RANGE = 11,
+    UNIMPLEMENTED = 12,
+    INTERNAL = 13,
+    UNAVAILABLE = 14,
+    DATA_LOSS = 15,
   };
 
   struct GenericResponse {
@@ -56,5 +70,11 @@ class StreamUtil {
 
   DISALLOW_COPY_AND_ASSIGN(StreamUtil);
 };
+
+template<class T>
+T GetResponseOrDie(T response) {
+  CHECK_EQ(response.code, StreamUtil::OK) << "Error: " << response.error;
+  return response;
+}
 
 }  // namespace ninetan
