@@ -131,7 +131,6 @@ StreamUtil::ListResponse StreamUtil::List(const string& stream_id) {
 
 StreamUtil::GenericResponse StreamUtil::Exit(int exit_code) {
   signal(SIGTERM, SIG_IGN);
-  signal(SIGABRT, SIG_IGN);
   SendRequest(StrCat("exit ", exit_code));
   return ReceiveGenericResponse();
 }
