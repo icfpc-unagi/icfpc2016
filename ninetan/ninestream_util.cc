@@ -1,5 +1,7 @@
 #include "ninetan/ninestream_util.h"
 
+#include <signal.h>
+
 #include "base/base.h"
 
 namespace ninetan {
