@@ -40,3 +40,13 @@ cc_binary(
     ],
     linkstatic = 1,
 )
+
+imosh_test(
+    name = "ninestream_example_test",
+    srcs = ["ninestream_example_test.sh"],
+    timeout = "short",
+    data = [
+        ":ninestream",
+        ":ninestream_example",
+    ],
+)
