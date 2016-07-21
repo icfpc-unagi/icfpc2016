@@ -9,8 +9,6 @@ test::ninestream_example() {
   echo 'echo ${i}' >>"${stdin}"
   echo 'exit' >>"${stdin}"
 
-  ls -lAR .
-
   ninetan/ninestream \
       --master='ninetan/ninestream_example --alsologtostderr' \
       --worker='bash' --replicas=5 \
