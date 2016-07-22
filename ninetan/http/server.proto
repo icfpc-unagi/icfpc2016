@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+package ninetan.http;
+
+message Request {
+  optional string method = 1;
+  optional string path = 2;
+  optional string version = 3;
+
+  message Header {
+    optional string key = 1;
+    optional string value = 2;
+  }
+  repeated Header header = 4;
+
+  optional bytes data = 5;
+}
+
+message Response {
+  enum Code {
+    OK = 200;
+    INTERNAL_SERVER_ERROR = 500;
+  }
+  optional Code code = 1 [default=OK];
+  optional string status = 2 [default="OK"];
+  optional bytes data = 3;
+
+  optional string content_type = 4 [default="text/html"];
+}
