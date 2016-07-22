@@ -23,7 +23,7 @@ test::server_example_get() {
       '  value: "*/*"'
       '}'
   )
-  sub::implode $'\n' output > "${expected}"
+  sub::implode $'\n' output >"${expected}"
   curl 'http://localhost:8001/' -A 'ServerTest' >"${actual}"
   diff "${expected}" "${actual}"
 }

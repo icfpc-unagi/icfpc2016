@@ -32,8 +32,7 @@ string ToJson(const Message& message, const JsonOptions& options) {
   string result;
   google::protobuf::util::JsonOptions protobuf_options;
   protobuf_options.add_whitespace = !options.compact();
-  protobuf_options.always_print_primitive_fields =
-      !options.suppress_default_primitive_values();
+  protobuf_options.always_print_primitive_fields = false;
   BinaryToJsonString(GetTypeResolver(), GetTypeUrl(message),
                      message.SerializeAsString(), &result, protobuf_options);
   return result;
