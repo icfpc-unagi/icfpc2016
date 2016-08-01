@@ -16,7 +16,7 @@ cc_library(
     deps = [
         ":json_options",
         "//external:base",
-        "@protobuf//:protobuf",
+        "//external:protolib",
     ],
 )
 
@@ -34,6 +34,6 @@ cc_test(
         ":proto",
         "//external:base",
         "//external:testing_main",
-        "@protobuf//:protobuf",
+        "//external:protolib",
     ],
 )

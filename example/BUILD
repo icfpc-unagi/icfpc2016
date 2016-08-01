@@ -2,15 +2,12 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("@protobuf//:protobuf.bzl", "cc_proto_library")
+load("//proto:proto.bzl", "cc_proto_library")
 load("//rules:haskell.bzl", "haskell_binary")
 
 cc_proto_library(
     name = "example_proto",
     srcs = ["example.proto"],
-    default_runtime = "@protobuf//:protobuf",
-    protoc = "@protobuf//:protoc",
-#    include = "external/protobuf/src",
 )
 
 cc_test(
@@ -18,8 +15,8 @@ cc_test(
     srcs = ["proto_test.cc"],
     deps = [
         ":example_proto",
-        "@protobuf//:protobuf",
         "//external:base",
+        "//external:protolib",
         "//external:testing_main",
     ],
 )

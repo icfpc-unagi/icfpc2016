@@ -2,7 +2,6 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("@protobuf//:protobuf.bzl", "cc_proto_library")
 load("//bin:imosh_test.bzl", "imosh_test")
 
 cc_binary(
