@@ -3,6 +3,7 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:public"])
 
 load("@protobuf//:protobuf.bzl", "cc_proto_library")
+load("//rules:haskell.bzl", "haskell_binary")
 
 cc_proto_library(
     name = "example_proto",
@@ -46,4 +47,9 @@ cc_test(
     deps = [
         "//external:testing_main",
     ],
+)
+
+haskell_binary(
+    name = "hello_haskell",
+    srcs = ["hello_haskell.hs"],
 )
