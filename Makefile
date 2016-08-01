@@ -3,7 +3,12 @@ test:
 .PHONY: test
 
 prebuild:
-	bazel build -c opt //external:{protoc,protolib,base,testing} //proto/...
+	bazel build -c opt \
+	    //external:base \
+	    //external:protoc \
+	    //external:protolib \
+	    //external:testing \
+	    //proto/...
 
 build:
 	bazel build -c opt //...
