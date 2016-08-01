@@ -19,10 +19,11 @@ bind(
     actual = "@gbase//base:testing_main"
 )
 
-git_repository(
+http_archive(
     name = "protobuf",
-    tag = "v3.0.0-beta-3.3",
-    remote = "https://github.com/google/protobuf.git",
+    url = "https://github.com/google/protobuf/archive/v3.0.0.zip",
+    strip_prefix = "protobuf-3.0.0",
+    sha256 = "881f7af19166ce729d877d1bc65700d937e55fcc49b062623c0cdbc5aad3e0c4",
 )
 
 bind(
