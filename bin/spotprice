@@ -1,0 +1,144 @@
+#!/usr/bin/php
+<?php
+
+date_default_timezone_set('UTC');
+ini_set('memory_limit', '2G');
+
+$SPECS = [
+    "cc2.8xlarge" => [60.5, 88, 3360.0, FALSE],
+    "cg1.4xlarge" => [22.5, 33.5, 1680.0, FALSE],
+    "m4.large" => [8.0, 6.5, 0, FALSE],
+    "m4.xlarge" => [16.0, 13, 0, FALSE],
+    "m4.2xlarge" => [32.0, 26, 0, FALSE],
+    "m4.4xlarge" => [64.0, 53.5, 0, FALSE],
+    "m4.10xlarge" => [160.0, 124.5, 0, FALSE],
+    "c4.large" => [3.75, 8, 0, FALSE],
+    "c4.xlarge" => [7.5, 16, 0, FALSE],
+    "c4.2xlarge" => [15.0, 31, 0, FALSE],
+    "c4.4xlarge" => [30.0, 62, 0, FALSE],
+    "c4.8xlarge" => [60.0, 132, 0, FALSE],
+    "g2.2xlarge" => [15.0, 26, 60.0, TRUE],
+    "g2.8xlarge" => [60.0, 104, 240.0, TRUE],
+    "x1.32xlarge" => [1952.0, 349, 3840.0, TRUE],
+    "r3.large" => [15.25, 6.5, 32.0, TRUE],
+    "r3.xlarge" => [30.5, 13, 80.0, TRUE],
+    "r3.2xlarge" => [61.0, 26, 160.0, TRUE],
+    "r3.4xlarge" => [122.0, 52, 320.0, TRUE],
+    "r3.8xlarge" => [244.0, 104, 640.0, TRUE],
+    "i2.xlarge" => [30.5, 14, 800.0, TRUE],
+    "i2.2xlarge" => [61.0, 27, 1600.0, TRUE],
+    "i2.4xlarge" => [122.0, 53, 3200.0, TRUE],
+    "i2.8xlarge" => [244.0, 104, 6400.0, TRUE],
+    "d2.xlarge" => [30.5, 14, 6000.0, FALSE],
+    "d2.2xlarge" => [61.0, 28, 12000.0, FALSE],
+    "d2.4xlarge" => [122.0, 56, 24000.0, FALSE],
+    "d2.8xlarge" => [244.0, 116, 48000.0, FALSE],
+    "hi1.4xlarge" => [60.5, 35, 2048.0, TRUE],
+    "hs1.8xlarge" => [117.0, 35, 48000.0, FALSE],
+    "m3.medium" => [3.75, 3, 4.0, TRUE],
+    "m3.large" => [7.5, 6.5, 32.0, TRUE],
+    "m3.xlarge" => [15.0, 13, 80.0, TRUE],
+    "m3.2xlarge" => [30.0, 26, 160.0, TRUE],
+    "c3.large" => [3.75, 7, 32.0, TRUE],
+    "c3.xlarge" => [7.5, 14, 80.0, TRUE],
+    "c3.2xlarge" => [15.0, 28, 160.0, TRUE],
+    "c3.4xlarge" => [30.0, 55, 320.0, TRUE],
+    "c3.8xlarge" => [60.0, 108, 640.0, TRUE],
+    "m1.small" => [1.7, 1, 160.0, FALSE],
+    "m1.medium" => [3.75, 2, 410.0, FALSE],
+    "m1.large" => [7.5, 4, 840.0, FALSE],
+    "m1.xlarge" => [15.0, 8, 1680.0, FALSE],
+    "c1.medium" => [1.7, 5, 350.0, FALSE],
+    "c1.xlarge" => [7.0, 20, 1680.0, FALSE],
+    "m2.xlarge" => [17.1, 6.5, 420.0, FALSE],
+    "m2.2xlarge" => [34.2, 13, 850.0, FALSE],
+    "m2.4xlarge" => [68.4, 26, 1680.0, FALSE],
+    "cr1.8xlarge" => [244.0, 88, 240.0, TRUE],
+];
+
+function Fatal($message) {
+  fwrite(STDERR, rtrim($message) . "\n");
+  exit(1);
+}
+
+function Run($command) {
+  $output = [];
+  $return = 0;
+  exec($command, $output, $return);
+  if ($return !== 0) {
+    Fatal("Failed to run $command: $return\n");
+  }
+  return implode("\n", $output);
+}
+
+function FetchPrices($params) {
+  $command = 'aws ec2 describe-spot-price-history';
+  foreach ($params as $key => $value) {
+    $command .= " --$key '$value'";
+  }
+  $data = json_decode(Run($command), TRUE);
+  return $data['SpotPriceHistory'];
+}
+
+function GetParams($region) {
+  $params['region'] = $region;
+  $params['start-time'] = date('c', time() + 60 * 60);
+  $results = [];
+  foreach (FetchPrices(['start-time' => date('c', time() + 60 * 60)]) as $row) {
+    if (!in_array($row['ProductDescription'],
+                  ['Linux/UNIX', 'Linux/UNIX (Amazon VPC)'])) {
+      continue;
+    }
+    $results[$row['InstanceType'] . '/' . $row['ProductDescription']] = [
+        'region' => $region,
+        'instance-types' => $row['InstanceType'],
+        'product-description' => $row['ProductDescription']];
+  }
+  return array_values($results);
+}
+
+function ListPrices($params, $spec) {
+  $time = time();
+  $params['start-time'] = date('c', $time - 28 * 24 * 60 * 60);
+  $data = FetchPrices($params);
+  $prices = [];
+  foreach (array_reverse($data) as $row) {
+    $key = $row['InstanceType'] . '(' . $row['AvailabilityZone'] . ') ' .
+           $row['ProductDescription'];
+    $prices[$key][] = $row;
+  }
+  $table = [];
+  foreach ($prices as $key => $history) {
+    $final = end($history);
+    $final['Timestamp'] = date('c', $time);
+    $history[] = $final;
+    $total_duration = 0;
+    $total_price = 0;
+    $total_price2 = 0;
+    for ($i = 0; $i + 1 < count($history); $i++) {
+      $duration = strtotime($history[$i + 1]['Timestamp']) -
+                  strtotime($history[$i]['Timestamp']);
+      $price = floatval($history[$i]['SpotPrice']) * 10000;
+      $total_duration += $duration;
+      $total_price += $duration * $price;
+      $total_price2 += $duration * $price * $price;
+    }
+    $price = $total_price / $total_duration;
+    $price2 = sqrt($total_price2 / $total_duration);
+    echo "$key\t" . intval(round($price2)) .
+          "\t" . intval(round($price2 - $price)) .
+          "\t" . intval(round($price2 / $spec[0])) .
+          "\t" . intval(round($price2 / $spec[1])) .
+          "\n";
+  }
+}
+
+if (count($argv) != 2) {
+  fwrite(STDERR, "Usage: spotprice region\n");
+  exit(1);
+}
+
+foreach (GetParams($argv[1]) as $params) {
+  if (!isset($SPECS[$params['instance-types']])) continue;
+  ListPrices($params, $SPECS[$params['instance-types']]);
+}
