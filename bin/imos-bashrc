@@ -1,0 +1,76 @@
+#!/bin/bash
+# imos-bashrc is a bash init script.
+#
+# imos-bashrc initializes PS1 and sources init files.
+#
+# Usage:
+#     source /usr/imos/bin/imos-bashrc
+
+# Exit immediatelly if PS1 is not set.
+if [ "${PS1}" = '' ]; then return 2>&- || exit; fi
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables
+source "$(dirname "${BASH_SOURCE}")"/library/git-prompt.sh
+
+__bashrc::show_extra_ps1() {
+  case "$(sub::strtolower "${POKEMON}")" in
+    chikorita)
+      if ! klist -s >/dev/null 2>/dev/null; then
+        echo kinit
+      fi
+      ;;
+  esac
+}
+
+__bashrc::show_remaining_time() {
+  local timestamp="$(date +'%s')"
+  local remaining="$(( 1470614400 - timestamp ))"
+  if (( remaining < 0 )); then
+    echo 'END';
+  else
+    printf '%02d:%02d:%02d' \
+        "$((remaining / 60 / 60))" \
+        "$((remaining / 60 % 60))" \
+        "$((remaining % 60))"
+  fi
+}
+
+__bashrc::set_ps1() {
+  local git='\[\033[36m\]$(__git_ps1 "%s:" 2>/dev/null)\[\033[0m\]'
+  local dir='\[\033[1;35m\]\w\[\033[0m\]'
+  local brace_open='\[\033[34m\][\[\033[0m\]'
+  local brace_close='\[\033[34m\]]\[\033[0m\]'
+  local block1="${brace_open}${git}${dir}${brace_close}"
+
+  local date='\[\033[38;5;238m\](${USER}@'
+  if [ "${POKEMON-}" = '' ]; then
+    date+="$(hostname -s) "
+  else
+    date+="${POKEMON} "
+  fi
+  date+='$(TZ=Asia/Tokyo date +"%Y-%m-%d %H:%M:%S %Z") '
+  date+='/ $(__bashrc::show_remaining_time)'
+  date+=')\[\033[0m\]'
+  local block2="${date}"
+
+  local extra='\[\033[31m\]$(__bashrc::show_extra_ps1 2>/dev/null)\[\033[0m\]'
+  local block3="${extra}"
+
+  local ps1="${block1} ${block2}\[\033[0m\] ${block3}\n"
+  ps1+='$(if [ "${USER-}" = "root" ]; then echo "#"; else echo "\$"; fi) '
+  export PS1="${ps1}"
+}
+
+__bashrc::init() {
+  export USER="$(whoami)"
+  __bashrc::set_ps1
+  local target="$(dirname "${BASH_SOURCE}")/library/bashrc-$(sub::strtolower "${UNAME}").sh"
+  if [ -f "${target}" ]; then
+    source "${target}"
+  fi
+  shopt -u histappend
+  export HISTSIZE=999999
+  export HISTCONTROL=ignorespace
+}
+
+__bashrc::init

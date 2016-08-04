@@ -8,7 +8,7 @@ start: mount check
 		docker rm --force $(SERVICE) 2>/dev/null || true; \
 		docker run \
 		    --privileged \
-		    --restart=always \
+		    --rm \
 		    --name=$(SERVICE) \
 		    --hostname=$(SERVICE) \
 		    --volume=/alloc:/alloc \
