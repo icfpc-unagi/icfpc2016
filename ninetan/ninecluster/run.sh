@@ -100,5 +100,12 @@ do
   fi
   sleep 1
 done
-# bash /usr/local/ninelet/run.sh &
+
+bash /usr/local/ninelet/run.sh &
+
+while :; do
+  rsync -va --delete --delete-excluded /alloc/ /mirror/
+  sleep 10
+done &
+
 exec /usr/sbin/sshd -D

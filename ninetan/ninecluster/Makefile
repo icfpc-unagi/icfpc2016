@@ -8,7 +8,6 @@ start: check
 		docker rm --force $(SERVICE) 2>/dev/null || true; \
 		docker run \
 		    --privileged \
-		    --rm \
 		    --restart=always \
 		    --name=$(SERVICE) \
 		    --hostname=$(SERVICE) \
