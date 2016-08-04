@@ -28,9 +28,10 @@ stop: check
 .PHONY: stop
 
 mount: check
-	if ! mountpoint /alloc; then
-		mkdir -p /alloc
-		sshfs -o allow_other,uid=65534,gid=65534 ninefs@ninefs.sx9.jp:/alloc /alloc
+	if ! mountpoint /alloc; then \
+		mkdir -p /alloc; \
+		sshfs -o allow_other,uid=65534,gid=65534 \
+		    ninefs@ninefs.sx9.jp:/alloc /alloc; \
 	fi
 .PHONY: mount
 
