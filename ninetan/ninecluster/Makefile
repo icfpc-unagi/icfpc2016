@@ -8,6 +8,8 @@ start: check
 		docker rm --force $(SERVICE) 2>/dev/null || true; \
 		docker run \
 		    --privileged \
+		    --rm \
+		    --restart=always \
 		    --name=$(SERVICE) \
 		    --hostname=$(SERVICE) \
 		    --volume=/alloc:/alloc \
@@ -52,7 +54,7 @@ install:
 	test "$$(whoami)" = 'root'
 	apt-get update -qq
 	apt-get install -qqy \
-	    apt-transport-https ca-certificates curl lxc iptables sshfs
+	    apt-transport-https ca-certificates curl lxc iptables sshfs make
 	curl -sSL https://get.docker.com/ | sh
 	sed -i 's/^GRUB_CMDLINE_LINUX=".*"/GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1"/' /etc/default/grub
 	update-grub

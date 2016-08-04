@@ -89,7 +89,7 @@ rm -rf /var/run/docker.pid
 # If we were given a PORT environment variable, start as a simple daemon;
 # otherwise, spawn a shell as well
 pid="$$"
-docker --daemon --graph=/ninemaster/docker \
+docker daemon --graph=/ninemaster/docker \
     -H unix:///var/run/docker.sock $DOCKER_DAEMON_ARGS &
 (( timeout = 10 + SECONDS ))
 until docker info >/dev/null 2>&1
