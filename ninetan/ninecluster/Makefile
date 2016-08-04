@@ -1,6 +1,6 @@
 SERVICE := ninemaster
 
-start: check
+start: mount check
 	if ! docker top $(SERVICE) >/dev/null 2>/dev/null; then \
 		set -e -x; \
 		mkdir -p /alloc /mirror /ninemaster; \
@@ -28,8 +28,10 @@ stop: check
 .PHONY: stop
 
 mount: check
-	mkdir -p /alloc
-	sshfs -o allow_other,uid=65534,gid=65534 ninefs@ninefs.sx9.jp:/alloc /alloc
+	if ! mountpoint /alloc; then
+		mkdir -p /alloc
+		sshfs -o allow_other,uid=65534,gid=65534 ninefs@ninefs.sx9.jp:/alloc /alloc
+	fi
 .PHONY: mount
 
 unmount: check
