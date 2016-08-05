@@ -38,7 +38,8 @@ function CallApi($path, $params = NULL) {
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, TRUE);
     curl_setopt($curl, CURLOPT_ENCODING, '');
     curl_setopt($curl, CURLOPT_HTTPHEADER,
-                ['X-API-Key: 42-59d13e150cd0de2292ef5adf36cb1e26']);
+                ['X-API-Key: 42-59d13e150cd0de2292ef5adf36cb1e26',
+                 'Expect: ']);
     $output = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
@@ -51,7 +52,7 @@ function CallApi($path, $params = NULL) {
     if ($status != 429) break;
     sleep(pow(2, $i));
   }
-  if ($status != 200) {
+  if ($status != 200 && $status != 400) {
     return NULL;
   }
   return $output;
@@ -108,6 +109,19 @@ function GetSnapshot() {
   }
   $data = json_decode($data, TURE);
   if (!isset($data['problems'])) {
+    return NULL;
+  }
+  return $data;
+}
+
+function SubmitSolution($problem_id, $data) {
+  $data = CallApi('/solution/submit',
+                  ['problem_id' => $problem_id, 'solution_spec' => $data]);
+  if (is_null($data)) {
+    return NULL;
+  }
+  $data = json_decode($data, TURE);
+  if (!isset($data['ok'])) {
     return NULL;
   }
   return $data;
