@@ -39,13 +39,13 @@ if (!is_null($data) && strlen(trim($data)) > 0) {
       UPDATE `proposal`
       SET
           `problem_id` = NULL,
-          `proposal_solution` = {proposal_solution},
+          `proposal_solution` = {data},
           `proposal_submission` = NULL,
           `proposal_lock` = 0
       WHERE `proposal_id` = {proposal_id}
       LIMIT 1',
       ['proposal_id' => $proposal_id,
-       'proposal_data' => $data]);
+       'data' => $data]);
 }
 
 ?><html>
