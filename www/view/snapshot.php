@@ -25,16 +25,23 @@ ksort($users);
 <body>
 <h1>Problems</h1>
 <table>
-<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Publish Time<td></tr>
+<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Publish Time<td></tr>
 <?php
 
 foreach ($snapshot['problems'] as $problem) {
+  $solved = 0;
+  foreach ($problem['ranking'] as $rank) {
+    if ($rank['resemblance'] == 1) {
+      $solved++;
+    }
+  }
   echo '<tr>';
   echo '<td><a href="problem.php?problem_id=' . $problem['problem_id'] .
        '">' . $problem['problem_id'] . "</a></td>";
   echo '<td>' . htmlspecialchars($users[$problem['owner']]) . "</td>";
   echo '<td>' . $problem['problem_size'] . "</td>";
   echo '<td>' . $problem['solution_size'] . "</td>";
+  echo '<td>' . $solved . "</td>";
   echo '<td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</td>";
   echo "</tr>\n";
 }
