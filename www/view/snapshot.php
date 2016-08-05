@@ -18,7 +18,9 @@ foreach ($snapshot['users'] as $user) {
 
 ksort($users);
 
-?><html><title>Snapshot</title>
+?><html>
+<meta charset="UTF-8">
+<title>Snapshot</title>
 <body>
 <h1>Problems</h1>
 <table>
