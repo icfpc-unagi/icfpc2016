@@ -257,6 +257,7 @@ int main(int argc, char **argv){
     }
     continue;
 REVERT:
+    loop--;
     for(int x=0; x<=N; x++)
       for(int y=0; y<=N; y++) {
 	edges[x][y]=edges_bkup[x][y];
