@@ -35,7 +35,7 @@ void ReadProblem(std::istream& is, Problem* p) {
 void WriteProblem(const Problem& p, std::ostream& os) {
   os << p.polygons.size() << '\n';
   for (const auto& poly : p.polygons) {
-    os << poly << '\n';
+    os << poly;
   }
   os << p.skelton.size() << '\n';
   for (const auto& seg : p.skelton) {

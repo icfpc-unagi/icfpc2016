@@ -35,13 +35,30 @@ Vertex ConvertToVertex(const gPoint& p) {
   return v;
 }
 
+template <typename Ring>
+void ReduceRingAnchorPoints(Ring* ring) {
+  for (int i = 0; i < ring->size(); ++i) {
+    auto a = (*ring)[i];
+    auto b = (*ring)[(i + 1) % ring->size()];
+    auto c = (*ring)[(i + 2) % ring->size()];
+    bg::subtract_point(c, b);
+    bg::subtract_point(b, a);
+    if (b.x() * c.y() - b.y() * c.x() == 0) {
+      ring->erase(ring->begin() + (i + 1) % ring->size());
+      i--;
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv);
 
+  // Input
   Solution solution;
   std::ifstream solution_ifs(FLAGS_input);
   ReadSolution(solution_ifs, &solution);
 
+  // Combine
   ccwMultiPolygon mpoly, mpoly_tmp;
   MultiLineString mls, mls_tmp;
   for (const auto& facet : solution.facets) {
@@ -72,6 +89,15 @@ int main(int argc, char** argv) {
     LOG(INFO) << "lines: " << bg::wkt(mls);
   }
 
+  // Optimize
+  for (auto& poly : mpoly) {
+    ReduceRingAnchorPoints(&bg::exterior_ring(poly));
+    for (auto& iring : bg::interior_rings(poly)) {
+      ReduceRingAnchorPoints(&iring);
+    }
+  }
+
+  // Output
   Problem problem;
   for (const auto& poly : mpoly) {
     const auto& xring = bg::exterior_ring(poly);
