@@ -20,7 +20,9 @@ ksort($users);
 
 ?><html>
 <meta charset="UTF-8">
-<title>Snapshot</title>
+<title>Snapshot at <?php
+echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
+?></title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 <body>
 <h1>Problems</h1>
