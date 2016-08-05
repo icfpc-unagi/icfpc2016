@@ -56,7 +56,7 @@ int main() {
   printf(
       R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300px" height="300px" viewBox="0 0 1 1"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.01"/>)");
   for (int i = 0; i < n_polys; ++i) {
-    stringstream path;
+    std::stringstream path;
     for (int j = 0; j < polys[i].size(); ++j) {
       path << (j == 0 ? "M " : "L ") << rational_cast<double>(polys[i][j].x)
            << " " << rational_cast<double>(polys[i][j].y) << " ";
