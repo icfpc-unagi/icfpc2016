@@ -140,19 +140,18 @@ int main(int argc, char** argv) {
     printf(
         R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
   }
+  printf(
+      R"(<path fill="silver" stroke="gray" stroke-width="0.005" fill-rule="nonzero" d=")");
   for (int i = 0; i < n_polys; ++i) {
-    bool is_positive = is_ccw(polys[i]);
-    printf(R"(<path d=")");
     for (int j = 0; j < polys[i].size(); ++j) {
       printf("%c%.3f %.3f", j == 0 ? 'M' : 'L',
              polys[i][j].x.convert_to<double>(),
              polys[i][j].y.convert_to<double>());
     }
-    printf(R"(Z" fill="%s" stroke="%s" stroke-width="0.005"/>)",
-           is_positive ? "silver" : "white", is_positive ? "gray" : "black");
+    printf(R"(Z)");
   }
   printf(
-      R"(<g fill="none" stroke="purple" stroke-width="0.003">)");
+      R"("/><g fill="none" stroke="purple" stroke-width="0.003">)");
   for (const auto& e : edges) {
     printf(
         R"(<path d="M%.3f %.3fL%.3f %.3f"/>)", e.first.x.convert_to<double>(),
