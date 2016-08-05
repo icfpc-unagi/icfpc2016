@@ -28,6 +28,17 @@ ksort($users);
 <tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time</td></tr>
 <?php
 
+$solutions = [];
+foreach (Database::Select('
+    SELECT
+        `problem_id`,
+        COUNT(*) AS `solution_count`,
+        MAX(`solution_resemblance`) AS `solution_resemblance`
+    FROM `solution` GROUP BY `problem_id`') as $problem) {
+  $solutions[$problem['problem_id']] = $problem;
+}
+print_r($solutions);
+
 foreach ($snapshot['problems'] as $problem) {
   $solved = 0;
   foreach ($problem['ranking'] as $rank) {
@@ -35,6 +46,7 @@ foreach ($snapshot['problems'] as $problem) {
       $solved++;
     }
   }
+  $solution = $solutions[intval($problem['problem_id'])];
   echo '<tr>';
   echo '<td><a href="problem.php?problem_id=' . $problem['problem_id'] .
        '">' . $problem['problem_id'] . "</a></td>";
@@ -42,8 +54,17 @@ foreach ($snapshot['problems'] as $problem) {
   echo '<td>' . $problem['problem_size'] . "</td>";
   echo '<td>' . $problem['solution_size'] . "</td>";
   echo '<td>' . $solved . '</td>';
-  echo '<td><a href="solution.php?problem_id=' . $problem['problem_id'] .
-       '">Soluions</a></td>';
+  echo '<td><a href="solution.php?problem_id=' . $problem['problem_id'] . '">';
+  if (!isset($solution['solution_count'])) {
+    echo 'No';
+  } else if (is_null($solution['solution_resemblance'])) {
+    echo '??????';
+  } else if ($solution['solution_resemblance'] == 1.0) {
+    echo '<b>Solved</b>';
+  } else {
+    echo $solution['solution_resemblance'];
+  }
+  echo '</a></td>';
   echo '<td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</td>";
   echo "</tr>\n";
 }
