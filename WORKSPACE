@@ -38,8 +38,8 @@ bind(
 
 http_archive(
     name = "boost_archive",
-    url = "https://storage.googleapis.com/archive-imoz-jp/Repository/boost/boost.zip",
-    sha256 = "3bb94debd5c4d7d661b996c3283ae3cc1cd6d53541fc892cb5210e9769e1fc44",
+    url = "https://storage.googleapis.com/archive-imoz-jp/Repository/boost/boost-201608051245.zip",
+    sha256 = "95b1012f218c4f4ad8ff3e42288213f04951f7951ac65a73a22cbf03841cb5e5",
 )
 
 bind(

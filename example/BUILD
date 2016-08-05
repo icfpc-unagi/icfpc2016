@@ -56,7 +56,7 @@ cc_test(
     ],
 )
 
-haskell_binary(
-    name = "hello_haskell",
-    srcs = ["hello_haskell.hs"],
-)
+# haskell_binary(
+#     name = "hello_haskell",
+#     srcs = ["hello_haskell.hs"],
+# )
