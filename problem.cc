@@ -5,9 +5,9 @@
 #include "boost/multiprecision/cpp_int.hpp"
 #include "boost/rational.hpp"
 
-DEFINE_BOOL(expand_viewbox, true,
+DEFINE_bool(expand_viewbox, true,
             "Expand viewbox to covert the entire silhouette.");
-DEFINE_BOOL(shrink_viewbox, false, "Shrink viewbox to fit silhouette.");
+DEFINE_bool(shrink_viewbox, false, "Shrink viewbox to fit silhouette.");
 
 using boost::rational;
 using boost::rational_cast;
@@ -79,7 +79,7 @@ int main() {
 
   // viewbox size
   Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
-  if (FLAGS_shrink) {
+  if (FLAGS_shrink_viewbox) {
     min_x = max_x = polys[0][0].x;
     min_y = max_y = polys[0][0].y;
   }
