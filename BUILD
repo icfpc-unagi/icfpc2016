@@ -52,3 +52,15 @@ cc_binary(
         ":polygon",
     ],
 )
+
+cc_binary(
+    name = "validate",
+    srcs = ["validate.cc"],
+    deps = [
+        "//external:base",
+        "//external:boost",
+        ":libproblem",
+        ":libsolution",
+        ":polygon",
+    ],
+)
