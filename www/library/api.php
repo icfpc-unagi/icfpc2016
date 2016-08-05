@@ -3,10 +3,31 @@
 require_once(dirname(__FILE__) . '/config.php');
 // define('DEBUG_MODE', 'sql');
 
+function GetToken() {
+  for ($i = 0; $i < 10; $i++) {
+    $current_time = intval(array_sum(array_map(
+        'floatval', explode(' ', microtime()))) * 1000000);
+    Database::Command('
+        UPDATE `token` SET `token_value` = {value}
+        WHERE `token_id` = "api" AND
+              `token_value` < {value} - 1100000 LIMIT 1',
+        ['value' => $current_time]);
+    if (Database::AffectedRows() > 0) {
+      return TRUE;
+    }
+    usleep(500 * 1000);
+  }
+  return FALSE;
+}
+
 function CallApi($path, $params = NULL) {
   $url = "http://2016sv.icfpcontest.org/api${path}";
 
   for ($i = 0; $i < 3; $i++) {
+    if (!GetToken()) {
+      sleep(rand(1, pow(2, $i)));
+      continue;
+    }
     fwrite(STDERR, "Calling $url...");
     $curl = curl_init($url);
     if (!is_null($params)) {
@@ -21,7 +42,12 @@ function CallApi($path, $params = NULL) {
     $output = curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-    fwrite(STDERR, "Status: $status\n");
+    Database::Command(
+        'INSERT INTO `api`{api}',
+        ['api' => [
+            'api_path' => $path,
+            'api_output' => $output,
+            'api_status' => intval($status)]]);
     if ($status != 429) break;
     sleep(pow(2, $i));
   }
