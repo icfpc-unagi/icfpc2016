@@ -1,3 +1,5 @@
+#include "problem.h"
+
 #include <complex>
 #include <vector>
 #include <fstream>
@@ -21,29 +23,18 @@ int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv);
 
   std::ifstream ifs(FLAGS_input);
-
-  int n_polys;
-  ifs >> n_polys;
-  vector<Polygon> polys(n_polys);
-  for (int i = 0; i < n_polys; ++i) {
-    ifs >> polys[i];
-  }
-  int n_edges;
-  ifs >> n_edges;
-  vector<pair<Vertex, Vertex>> edges(n_edges);
-  for (int i = 0; i < n_edges; ++i) {
-    ifs >> edges[i].first >> edges[i].second;
-  }
+  Problem problem;
+  ReadProblem(ifs, &problem);
 
   // viewbox size
   Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
   if (FLAGS_shrink_viewbox) {
-    min_x = max_x = polys[0][0].x;
-    min_y = max_y = polys[0][0].y;
+    min_x = max_x = problem.polygons[0][0].x;
+    min_y = max_y = problem.polygons[0][0].y;
   }
   if (FLAGS_expand_viewbox) {
-    for (int i = 0; i < n_polys; ++i) {
-      for (const auto& v : polys[i]) {
+    for (int i = 0; i < problem.polygons.size(); ++i) {
+      for (const auto& v : problem.polygons[i]) {
         if (v.x < min_x) min_x = v.x;
         if (max_x < v.x) max_x = v.x;
         if (v.y < min_y) min_y = v.y;
@@ -53,13 +44,13 @@ int main(int argc, char** argv) {
   }
   if (FLAGS_shrink_viewbox) {
     // Translate to reasonable coordinates
-    for (auto& p : polys) {
+    for (auto& p : problem.polygons) {
       for (auto& v : p) {
         v.x -= min_x;
         v.y -= min_y;
       }
     }
-    for (auto& e : edges) {
+    for (auto& e : problem.skelton) {
       e.first.x -= min_x;
       e.first.y -= min_y;
       e.second.x -= min_x;
@@ -81,17 +72,17 @@ int main(int argc, char** argv) {
   }
   printf(
       R"(<path fill="silver" stroke="gray" stroke-width="0.005" fill-rule="nonzero" d=")");
-  for (int i = 0; i < n_polys; ++i) {
-    for (int j = 0; j < polys[i].size(); ++j) {
+  for (int i = 0; i < problem.polygons.size(); ++i) {
+    for (int j = 0; j < problem.polygons[i].size(); ++j) {
       printf("%c%.3f %.3f", j == 0 ? 'M' : 'L',
-             polys[i][j].x.convert_to<double>(),
-             polys[i][j].y.convert_to<double>());
+             problem.polygons[i][j].x.convert_to<double>(),
+             problem.polygons[i][j].y.convert_to<double>());
     }
     printf("Z");
   }
   printf(
       R"("/><g fill="none" stroke="purple" stroke-width="0.003">)");
-  for (const auto& e : edges) {
+  for (const auto& e : problem.skelton) {
     printf(
         R"(<path d="M%.3f %.3fL%.3f %.3f"/>)", e.first.x.convert_to<double>(),
         e.first.y.convert_to<double>(), e.second.x.convert_to<double>(),
