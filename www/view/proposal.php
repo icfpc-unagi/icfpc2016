@@ -58,6 +58,16 @@ if (!is_null($data) && strlen(trim($data)) > 0) {
 <textarea name="data" style="width:100%;height:200px"></textarea>
 <input type="submit" value="Submit">
 </form>
+<?php
+
+$data = Database::SelectCell('
+    SELECT `proposal_solution`
+    FROM `proposal`
+    WHERE `proposal_id` = {proposal_id} LIMIT 1',
+    ['proposal_id' => $proposal_id]);
+
+if (!is_null($data)) {
+?>
 <h1>Figure</h1>
 <?php
 
@@ -93,4 +103,7 @@ Draw($data);
 ?>
 <h1>Data</h1>
 <textarea style="width:100%;height:300px;font-size:100%;font-family:monospace"><?php echo htmlspecialchars($data); ?></textarea>
+<?php
+}
+?>
 </body>
