@@ -4,6 +4,7 @@
 
 using boost::rational;
 using boost::rational_cast;
+using std::istream;
 
 typedef boost::multiprecision::cpp_rational Q;
 
