@@ -11,6 +11,16 @@ cc_proto_library(
 )
 
 cc_test(
+    name = "bigint_test",
+    srcs = ["bigint_test.cc"],
+    deps = [
+        "//external:boost",
+        "//external:base",
+        "//external:testing_main",
+    ],
+)
+
+cc_test(
     name = "proto_test",
     srcs = ["proto_test.cc"],
     deps = [
