@@ -98,4 +98,6 @@ foreach ($problem['ranking'] as $user) {
 
 ?>
 </table>
+<h1>Data</h1>
+<textarea width="100%" height="300"><?php echo htmlspecialchars($data); ?></textarea>
 </body>
