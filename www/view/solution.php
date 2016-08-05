@@ -71,7 +71,7 @@ foreach (Database::Select('
   echo '<td>' . $solution['solution_id'] . '</td>';
   echo '<td>' . $solution['problem_id'] . '</td>';
   echo '<td>' . $solution['solution_resemblance'] . '</td>';
-  echo '<td><a href="solution_data.php?solution_id='$solution['solution_id'] . '">View</a></td>';
+  echo '<td><a href="solution_data.php?solution_id=' . $solution['solution_id'] . '">View</a></td>';
   echo '<td>' . $solution['solution_submission'] . '</td>';
   echo '<td>' . $solution['solution_created'] . '</td>';
   echo "</tr>\n";
