@@ -43,6 +43,7 @@ main = do
   -- print parents
   let
     -- linear0 = Lin (Cpx (4/5) (3/5)) (Cpx (1/3) (1/2))
+    -- x^2 + y^2 should be 1
     linear0 = mempty
     linears = array (0,np-1) $
       (0, linear0) :
@@ -55,12 +56,16 @@ main = do
       | (v,i) <- zip vs [0..]
       , let f = head [linears!j | (p,j) <- zip ps [0..], i`elem`p]
       ]
+    vsNew2 = let
+      mx = minimum $ map real vsNew
+      my = minimum $ map imag vsNew
+      in  map (subtract $ Cpx mx my) vsNew
   --
   print nv
   mapM_ (putStrLn . prettyV) vs
   print np
   mapM_ (putStrLn . (\ xs -> unwords $ (show $ length xs) : map show xs)) ps
-  mapM_ (putStrLn . prettyV) vsNew
+  mapM_ (putStrLn . prettyV) vsNew2
 
 type Qi = Cpx Q
 
