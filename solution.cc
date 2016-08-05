@@ -9,7 +9,7 @@
 
 DEFINE_bool(expand_viewbox, true,
             "Expand viewbox to covert the entire silhouette.");
-DEFINE_bool(shrink_viewbox, true,
+DEFINE_bool(shrink_viewbox, false,
             "Shrink viewbox to fit silhouette and hide the original rect.");
 DEFINE_string(input, "/dev/stdin", "input solution file");
 
@@ -78,7 +78,10 @@ int main(int argc, char** argv) {
     }
   }
   printf(
-      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="-0.0025 -0.0025 1.005 1.005" stroke-linejoin="round" stroke-linecap="round">)");
+      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round">)",
+      min_x.convert_to<double>() - 0.0025, min_y.convert_to<double>() - 0.0025,
+      Q(max_x - min_x).convert_to<double>() + 0.005,
+      Q(max_y - min_y).convert_to<double>() + 0.005);
   printf(
       R"(<style>path:hover{fill:orange}</style>)");
   printf(
