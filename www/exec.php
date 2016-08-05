@@ -6,9 +6,9 @@ function Fail($status, $message) {
   exit;
 }
 
-function Run($command, $input, $output) {
+function Run($command, $input) {
   $process = proc_open(
-      "timeout 10s /alloc/global/bin/$command",
+      $command,
       [0 => ['pipe', 'r'],
        1 => ['pipe', 'w'],
        2 => ['pipe', 'w']],
@@ -16,12 +16,12 @@ function Run($command, $input, $output) {
   if ($process === NULL) {
     Fail('500 Internal Error', "Failed to run $command");
   }
-  fwrite($pipes[0], str_replace("\r\n", "\n", $data));
+  fwrite($pipes[0], str_replace("\r\n", "\n", $input));
   fclose($pipes[0]);
   $stdout = stream_get_contents($pipes[1]);
   $stderr = stream_get_contents($pipes[2]);
   $return_value = proc_close($process);
-  return ['stdout' => $stdout, 'stderr' => $stderr, 'code' => $return_value];
+  return ['command' => $command, 'stdout' => $stdout, 'stderr' => $stderr, 'code' => $return_value];
 }
 
 $params = $_REQUEST;
@@ -52,7 +52,8 @@ if (strlen($command) == 0) {
   Fail('400 Bad Request', 'command is required');
 }
 
-echo json_encode(Run($command . $flags, $input));
+echo json_encode(Run(
+    'timeout 10s /alloc/global/bin/' .$command . $flags, $input));
 
 foreach ($files as $file) {
   @unlink($file);
