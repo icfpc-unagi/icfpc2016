@@ -14,6 +14,9 @@ if [ "${FLAGS_solution}" == '' ]; then
   LOG FATAL '--solution is required.'
 fi
 
-curl -F "solution=$(cat "${FLAGS_solution}")" \
+curl --dump-header - --silent \
+     -H 'Expect: ' \
+     -F "solution=$(cat "${FLAGS_solution}")" \
      -F "problem_id=${FLAGS_problem_id}" \
-    'http://db.sx9.jp/exec/add_solution.php'
+    'http://db.sx9.jp/exec/add_solution.php' | \
+php "$(dirname "${BASH_SOURCE}")/library/parse.php"
