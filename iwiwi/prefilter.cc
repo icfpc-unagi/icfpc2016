@@ -132,42 +132,6 @@ Polygon RegionPolygon(int k) {
   return p;
 }
 
-void EnumerateRegions() {
-  using pii = pair<int, int>;
-  map<pii, pii> nxt;
-  rep (i, coords.size()) {
-    const Point &p = coords[i];
-    vector<int> ord = adj[i];
-    sort(all(ord), [&] (const int a, const int b) -> bool {
-        Point av = coords[a], bv = coords[b];
-        bg::subtract_point(av, p);
-        bg::subtract_point(bv, p);
-        int aq = Quadrant(av), bq = Quadrant(bv);
-        if (aq != bq) return aq < bq;
-        else return Det(av, bv) > 0;
-      });
-
-    rep (j, ord.size()) {
-      nxt[mp(ord[(j + 1) % ord.size()], i)] = mp(i, ord[j]);
-    }
-  }
-
-  set<pii> usd;
-  rep (i, coords.size()) {
-    for (int j : adj[i]) {
-      if (usd.count(mp(i, j))) continue;
-
-      vector<int> reg;
-      int a = i, b = j;
-      while (usd.count(mp(a, b)) == 0) {
-        reg.emplace_back(a);
-        usd.insert(mp(a, b));
-        tie(a, b) = nxt.at(mp(a, b));
-      }
-      regions.emplace_back(reg);
-    }
-  }
-}
 
 void PrintRegions() {
   cerr << "[[[ " << regions.size() << " Regions ]]]" << endl;
@@ -241,10 +205,10 @@ int main() {
   Input();
   SegmentArrangement();
   //PrintGraph();
-  EnumerateRegions();
+  regions = EnumerateRegions(coords, adj);
   //PrintRegions();
   FilterRegions();
-  //PrintRegions();
+  PrintRegions();
   Verify();
   Output();
 }
