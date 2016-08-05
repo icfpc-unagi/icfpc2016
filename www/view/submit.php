@@ -17,10 +17,17 @@ function FindSolution() {
 }
 
 function Submit($solution) {
-  $response = SubmitSolution(
-      $solution['problem_id'], $solution['solution_data']);
-  if (is_null($response)) {
-    die("Failed to submit.");
+  if (strlen($solution['solution_data']) <= 5000) {
+    $response = SubmitSolution(
+        $solution['problem_id'], $solution['solution_data']);
+    if (is_null($response)) {
+      die("Failed to submit.");
+    }
+  } else {
+    $response = [
+        'ok' => false,
+        'solution_id' => $solution['solution_id'],
+        'resemblance' => 0];
   }
   Database::Command('
       UPDATE `solution`
