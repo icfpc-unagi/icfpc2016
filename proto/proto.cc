@@ -38,10 +38,16 @@ string ToJson(const Message& message, const JsonOptions& options) {
   return result;
 }
 
+string ToJson(const Message& message) {
+  return ToJson(message, JsonOptions());
+}
+
 bool FromJson(const string& json, Message* message) {
   string binary;
-  if (!JsonToBinaryString(
-          GetTypeResolver(), GetTypeUrl(*message), json, &binary).ok()) {
+  const auto status = JsonToBinaryString(
+          GetTypeResolver(), GetTypeUrl(*message), json, &binary);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return false;
   }
   return message->ParseFromString(binary);

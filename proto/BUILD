@@ -7,6 +7,7 @@ load("//proto:proto.bzl", "cc_proto_library")
 cc_proto_library(
     name = "json_options",
     srcs = ["json_options.proto"],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -18,6 +19,7 @@ cc_library(
         "//external:base",
         "//external:protolib",
     ],
+    visibility = ["//visibility:public"],
 )
 
 cc_proto_library(

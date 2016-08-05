@@ -9,9 +9,7 @@ using google::protobuf::TextFormat;
 
 string ToJson(const Message& message, const JsonOptions& options);
 
-string ToJson(const Message& message) {
-  return ToJson(message, JsonOptions());
-}
+string ToJson(const Message& message);
 
 bool FromJson(const string& json, Message* message);
 
