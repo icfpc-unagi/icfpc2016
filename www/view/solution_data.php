@@ -17,5 +17,5 @@ if ($result === FALSE) {
   die('Solution is not found.');
 }
 
-header('Context-Type: text/plain');
+header('Content-Type: text/plain');
 echo $result;
