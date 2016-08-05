@@ -81,4 +81,21 @@ $data = GetBlob($problem['problem_spec_hash']);
 Draw($data);
 
 ?>
+<h1>Ranking</h1>
+<table>
+<tr><td>Rank</td><td>Resemblance</td><td>Size</td></tr>
+<?php
+
+$rank = 1;
+foreach ($problem['ranking'] as $user) {
+  echo '<tr>';
+  echo '<td>' . $rank . '</td>';
+  echo '<td>' . $user['resemblance'] . "</td>";
+  echo '<td>' . $user['solution_size'] . "</td>";
+  echo "</tr>\n";
+  $rank++;
+}
+
+?>
+</table>
 </body>
