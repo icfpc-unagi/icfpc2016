@@ -7,7 +7,8 @@
 
 DEFINE_bool(expand_viewbox, true,
             "Expand viewbox to covert the entire silhouette.");
-DEFINE_bool(shrink_viewbox, false, "Shrink viewbox to fit silhouette.");
+DEFINE_bool(shrink_viewbox, true,
+            "Shrink viewbox to fit silhouette and hide the original rect.");
 
 using boost::rational;
 using boost::rational_cast;
@@ -111,29 +112,53 @@ int main(int argc, char** argv) {
       }
     }
   }
+  if (FLAGS_shrink_viewbox) {
+    // Translate to reasonable coordinates
+    for (auto& p : polys) {
+      for (auto& v : p) {
+        v.x -= min_x;
+        v.y -= min_y;
+      }
+    }
+    for (auto& e : edges) {
+      e.first.x -= min_x;
+      e.first.y -= min_y;
+      e.second.x -= min_x;
+      e.second.y -= min_y;
+    }
+    LOG(INFO) << "Translate " << min_x << "," << min_y;
+    max_x -= min_x;
+    max_y -= min_y;
+    min_x = min_y = 0;
+  }
   printf(
-      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300px" height="300px" viewBox="%.3f %.3f %.3f %.3f"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)",
+      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f">)",
       min_x.convert_to<double>(), min_y.convert_to<double>(),
       Q(max_x - min_x).convert_to<double>(),
       Q(max_y - min_y).convert_to<double>());
+  if (!FLAGS_shrink_viewbox) {
+    printf(
+        R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
+  }
   for (int i = 0; i < n_polys; ++i) {
     bool is_positive = is_ccw(polys[i]);
     printf(R"(<path d=")");
     for (int j = 0; j < polys[i].size(); ++j) {
-      printf("%c %.3f %.3f ", j == 0 ? 'M' : 'L',
+      printf("%c%.3f %.3f", j == 0 ? 'M' : 'L',
              polys[i][j].x.convert_to<double>(),
              polys[i][j].y.convert_to<double>());
     }
     printf(R"(Z" fill="%s" stroke="%s" stroke-width="0.005"/>)",
            is_positive ? "silver" : "white", is_positive ? "gray" : "black");
   }
+  printf(R"(<g fill="none" stroke="purple" stroke-width="0.002">)");
   for (const auto& e : edges) {
     printf(
-        R"(<path d="M %.3f %.3f L %.3f %.3f" fill="none" stroke="purple" stroke-width="0.002"/>)",
-        e.first.x.convert_to<double>(), e.first.y.convert_to<double>(),
-        e.second.x.convert_to<double>(), e.second.y.convert_to<double>());
+        R"(<path d="M%.3f %.3fL%.3f %.3f"/>)", e.first.x.convert_to<double>(),
+        e.first.y.convert_to<double>(), e.second.x.convert_to<double>(),
+        e.second.y.convert_to<double>());
   }
-  printf("</svg>");
+  printf("</g></svg>");
 
   return 0;
 }
