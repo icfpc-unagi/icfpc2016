@@ -25,7 +25,7 @@ ksort($users);
 <body>
 <h1>Problems</h1>
 <table>
-<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time<td></tr>
+<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time</td></tr>
 <?php
 
 foreach ($snapshot['problems'] as $problem) {

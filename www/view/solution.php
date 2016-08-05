@@ -49,7 +49,7 @@ if (!is_null($data) && strlen(trim($data)) > 0) {
 <h1>Submit</h1>
 <form action="?problem_id=<?php echo $problem_id; ?>" method="POST">
 <textarea name="data" style="width:100%;height:200px"></textarea>
-<input type="submission" value="Submit">
+<input type="submit" value="Submit">
 </form>
 <h1>Solutions for <?php echo $problem_id; ?></h1>
 <table>
