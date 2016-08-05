@@ -126,3 +126,8 @@ function SubmitSolution($problem_id, $data) {
   }
   return $data;
 }
+
+function FormatData($data) {
+  $data = preg_replace('%[\\r\\n]+%', "\n", trim($data));
+  return $data . "\n";
+}

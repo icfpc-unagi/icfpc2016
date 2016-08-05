@@ -32,7 +32,6 @@ foreach (Database::Select('
   }
   echo '<td>' . $proposal['problem_size'] . "</td>";
   echo '<td>' . $proposal['solution_size'] . "</td>";
-  echo '<td>' . $solved . '</td>';
   echo '<td>' . date('Y-m-d H:i:s', $proposal['proposal_id']) . "</td>";
   echo '<td><a href="proposal.php?proposal_id=' . $proposal['proposal_id'] .
        '">Edit</a></td>';
