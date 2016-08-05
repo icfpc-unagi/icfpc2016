@@ -37,7 +37,6 @@ foreach (Database::Select('
     FROM `solution` GROUP BY `problem_id`') as $problem) {
   $solutions[$problem['problem_id']] = $problem;
 }
-print_r($solutions);
 
 foreach ($snapshot['problems'] as $problem) {
   $solved = 0;
