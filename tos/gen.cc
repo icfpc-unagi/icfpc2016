@@ -1,10 +1,12 @@
 #include<iostream>
 #include<vector>
 #include<map>
+#include<cassert>
 
 using namespace std;
 
-const int N = 30;
+int N;
+const int N_MAX = 99;
 
 typedef pair<int, int> Point;
 typedef pair<Point, Point> Edge;
@@ -77,7 +79,7 @@ void print_vec(vector<int> v){
   cout<<">"<<endl;
 }
 
-void print_map(int e[N+1][N+1]){
+void print_map(int e[N_MAX+1][N_MAX+1]){
   cerr<<"-----"<<endl;
   for(int y=N; y>=0; y--){
     for(int x=0; x<=N; x++){
@@ -95,11 +97,11 @@ void print_map(int e[N+1][N+1]){
   }
 }
 
-void export_map(int edges0[N+1][N+1]){
+void export_map(int edges0[N_MAX+1][N_MAX+1]){
   vector<pair<int,int> > vertices;
   vector<vector<int> > polygons;
 
-  int edges[2*N+1][2*N+1]={};
+  int edges[2*N_MAX+1][2*N_MAX+1]={};
   for(int x=0; x<=N; x++)
     for(int y=0; y<=N; y++){
       int s = edges0[x][y];
@@ -113,7 +115,7 @@ void export_map(int edges0[N+1][N+1]){
       }
     }
 
-  bool used[2*N+1][2*N+1][8]={};
+  bool used[2*N_MAX+1][2*N_MAX+1][8]={};
   map<pair<int,int>, int> vertex_id1;
   int vertex_cnt = 0;
   for(int x0=0; x0<=2*N; x0++)
@@ -177,12 +179,18 @@ void export_map(int edges0[N+1][N+1]){
 }
 
 int main(int argc, char **argv){
-  if (argc<=1) return -1;
+  assert (argc > 3);
   int M;
-  sscanf(argv[1], "%d", &M);
-  srand(252521 + M);
+  sscanf(argv[1], "%d", &N);
+  assert (1 < N && N <= N_MAX);
+  sscanf(argv[2], "%d", &M);
+  {
+    int r;
+    sscanf(argv[3], "%d", &r);
+    srand(r);
+  }
 
-  int edges[N+1][N+1]={};
+  int edges[N_MAX+1][N_MAX+1]={};
   init_shapes();
 //  for(int i=0; i<shape4.size(); i++){
 //    for(int b=0; b<8; b++){
@@ -202,7 +210,7 @@ int main(int argc, char **argv){
   */
 
   for(int loop=0; loop<M; loop++) {
-    int edges_bkup[N+1][N+1];
+    int edges_bkup[N_MAX+1][N_MAX+1];
     for(int x=0; x<=N; x++)
       for(int y=0; y<=N; y++) {
 	edges_bkup[x][y]=edges[x][y];
