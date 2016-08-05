@@ -1,13 +1,27 @@
+#include <complex>
+#include <vector>
+
 #include "base/base.h"
 #include "boost/multiprecision/cpp_int.hpp"
 #include "boost/rational.hpp"
 
-using namespace std;
+DEFINE_BOOL(expand_viewbox, true,
+            "Expand viewbox to covert the entire silhouette.");
+DEFINE_BOOL(shrink_viewbox, false, "Shrink viewbox to fit silhouette.");
 
 using boost::rational;
 using boost::rational_cast;
+using namespace std;
 
 typedef boost::multiprecision::cpp_rational Q;
+typedef std::complex<Q> C;
+
+namespace std {
+// Dummy functions for std::complex
+bool isnan(const Q& q) { return false; }
+bool isinf(const Q& q) { return false; }
+Q copysign(const Q& x, const Q& y) { return x.sign() != y.sign() ? -x : x; }
+}
 
 struct Vertex {
   Q x;
@@ -15,6 +29,19 @@ struct Vertex {
 };
 
 typedef vector<Vertex> Polygon;
+
+bool is_ccw(const Polygon& p) {
+  vector<C> v(p.size());
+  for (int i = 0; i < p.size(); ++i) {
+    v[i] = C(p[i].x - p[0].x, p[i].y - p[0].y);
+  }
+  Q area;
+  for (int i = 1; i < v.size() - 1; ++i) {
+    area += (v[i] * std::conj(v[i + 1])).imag();
+  }
+  LOG_IF(ERROR, area == 0) << "Unexpected zero area";
+  return area < 0;
+}
 
 std::istream& operator>>(istream& is, Vertex& v) {
   string r;
@@ -50,13 +77,20 @@ int main() {
   }
   // TODO: Parse skelton
 
+  // viewbox size
   Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
-  for (int i = 0; i < n_polys; ++i) {
-    for (const auto& v : polys[i]) {
-      if (v.x < min_x) min_x = v.x;
-      if (max_x < v.x) max_x = v.x;
-      if (v.y < min_y) min_y = v.y;
-      if (max_y < v.y) max_y = v.y;
+  if (FLAGS_shrink) {
+    min_x = max_x = polys[0][0].x;
+    min_y = max_y = polys[0][0].y;
+  }
+  if (FLAGS_expand_viewbox) {
+    for (int i = 0; i < n_polys; ++i) {
+      for (const auto& v : polys[i]) {
+        if (v.x < min_x) min_x = v.x;
+        if (max_x < v.x) max_x = v.x;
+        if (v.y < min_y) min_y = v.y;
+        if (max_y < v.y) max_y = v.y;
+      }
     }
   }
   printf(
@@ -65,13 +99,15 @@ int main() {
       Q(max_x - min_x).convert_to<double>(),
       Q(max_y - min_y).convert_to<double>());
   for (int i = 0; i < n_polys; ++i) {
+    bool is_positive = is_ccw(polys[i]);
     printf(R"(<path d=")");
     for (int j = 0; j < polys[i].size(); ++j) {
-      printf("%c %.8f %.8f ", j == 0 ? 'M' : 'L',
+      printf("%c %.3f %.3f ", j == 0 ? 'M' : 'L',
              polys[i][j].x.convert_to<double>(),
              polys[i][j].y.convert_to<double>());
     }
-    printf(R"(Z" fill="silver" stroke="gray" stroke-width="0.01" />)");
+    printf(R"(Z" fill="silver" stroke="%s" stroke-width="0.01" />)",
+           is_positive ? "gray" : "black");
   }
   printf("</svg>");
 
