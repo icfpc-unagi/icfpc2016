@@ -20,3 +20,13 @@ cc_binary(
         ":polygon",
     ],
 )
+
+cc_binary(
+    name = "solution",
+    srcs = ["solution.cc"],
+    deps = [
+        "//external:base",
+        "//external:boost",
+        ":polygon",
+    ],
+)
