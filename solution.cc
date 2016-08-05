@@ -80,11 +80,12 @@ int main(int argc, char** argv) {
   printf(
       R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="-0.0025 -0.0025 1.005 1.005" stroke-linejoin="round" stroke-linecap="round">)");
   printf(
-      R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue"
-      stroke-width="0.005"/>)");
+      R"(<style>path:hover{fill:orange}</style>)");
+  printf(
+      R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
   for (int i = 0; i < n_facets; ++i) {
     printf(
-        R"(<path fill="silver" stroke="gray" stroke-width="0.005" id="i%d" d=")",
+        R"(<path fill="silver" stroke="gray" stroke-width="0.005" id="i%d" pointer-events="painted" d=")",
         i);
     for (int j = 0; j < facets[i].size(); ++j) {
       printf("%c%.3f %.3f", j == 0 ? 'M' : 'L',
@@ -92,6 +93,12 @@ int main(int argc, char** argv) {
              dst_verts[facets[i][j]].y.convert_to<double>());
     }
     printf(R"(Z"/>)");
+  }
+  for (int i = 0; i < n_verts; ++i) {
+    printf(
+        R"(<circle fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)",
+        dst_verts[i].x.convert_to<double>(),
+        dst_verts[i].y.convert_to<double>());
   }
   printf("</svg>");
 
