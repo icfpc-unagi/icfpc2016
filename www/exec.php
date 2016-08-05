@@ -21,7 +21,10 @@ function Run($command, $input) {
   $stdout = stream_get_contents($pipes[1]);
   $stderr = stream_get_contents($pipes[2]);
   $return_value = proc_close($process);
-  return ['command' => $command, 'stdout' => $stdout, 'stderr' => $stderr, 'code' => $return_value];
+  return ['command' => $command,
+          'stdout' => $stdout,
+          'stderr' => $stderr,
+          'code' => $return_value];
 }
 
 $params = $_REQUEST;
@@ -34,7 +37,7 @@ foreach ($params as $key => $value) {
     $command = $value;
     continue;
   }
-  if ($key == 'input') {
+  if ($key == 'stdin') {
     $input = $value;
     continue;
   }

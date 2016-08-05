@@ -11,8 +11,15 @@ function Fail($message, $status = '400 Bad Request') {
 }
 
 function Execute($params) {
-  $output = file_get_contents(
-      API_HOST . '/exec.php?' . http_build_query($params));
+  $data = http_build_query($params, "", "&");
+  $context = stream_context_create([
+      'http' => [
+          'method' => 'POST',
+          'header' =>
+              "Content-Type: application/x-www-form-urlencoded\r\n" .
+              "Content-Length: " . strlen($data),
+          'content' => $data]]);
+  $output = file_get_contents(API_HOST . '/exec.php', false, $context);
   if (strlen($output) == 0) {
     return NULL;
   }
