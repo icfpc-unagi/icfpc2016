@@ -1,0 +1,18 @@
+#!/bin/bash
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
+DEFINE_int problem_id 0 'Problem ID.'
+DEFINE_string solution '' 'Path for solution.'
+eval "${IMOSH_INIT}"
+
+if [ "${FLAGS_problem_id}" == 0 ]; then
+  LOG FATAL '--problem_id is required.'
+fi
+
+if [ "${FLAGS_solution}" == '' ]; then
+  LOG FATAL '--solution is required.'
+fi
+
+curl -F "solution=$(cat "${FLAGS_solution}")" \
+     -F "problem_id=${FLAGS_problem_id}" \
+    'http://db.sx9.jp/exec/add_solution.php'
