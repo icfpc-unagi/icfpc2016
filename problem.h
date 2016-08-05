@@ -31,3 +31,14 @@ void ReadProblem(std::istream& is, Problem* p) {
     is >> p->skelton[i].first >> p->skelton[i].second;
   }
 }
+
+void WriteProblem(const Problem& p, std::ostream& os) {
+  os << p.polygons.size() << '\n';
+  for (const auto& poly : p.polygons) {
+    os << poly << '\n';
+  }
+  os << p.skelton.size();
+  for (const auto& seg : p.skelton) {
+    os << seg.first << ' ' << seg.second << '\n';
+  }
+}

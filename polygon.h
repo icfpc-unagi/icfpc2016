@@ -66,6 +66,10 @@ std::istream& operator>>(std::istream& is, Vertex& v) {
   return is;
 }
 
+std::ostream& operator<<(std::ostream& os, const Vertex& v) {
+  return os << v.x << ',' << v.y;
+}
+
 std::istream& operator>>(std::istream& is, Polygon& p) {
   int n_verts;
   is >> n_verts;
@@ -74,4 +78,12 @@ std::istream& operator>>(std::istream& is, Polygon& p) {
     is >> p[i];
   }
   return is;
+}
+
+std::ostream& operator<<(std::ostream& os, const Polygon& p) {
+  os << p.size() << '\n';
+  for (const auto& v : p) {
+    os << v << '\n';
+  }
+  return os;
 }
