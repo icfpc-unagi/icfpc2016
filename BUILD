@@ -9,6 +9,8 @@ cc_library(
         "//external:base",
         "//external:boost",
     ],
+    linkopts = ["-lgmp"],
+    linkstatic = 1,
 )
 
 cc_library(
@@ -63,4 +65,18 @@ cc_binary(
         ":libsolution",
         ":polygon",
     ],
+)
+
+cc_binary(
+    name = "make_problem",
+    srcs = ["make_problem.cc"],
+    deps = [
+        "//external:base",
+        "//external:boost",
+        ":libproblem",
+        ":libsolution",
+        ":polygon",
+    ],
+    linkopts = ["-lgmp"],
+    linkstatic = 1,
 )

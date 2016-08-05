@@ -37,7 +37,7 @@ void WriteProblem(const Problem& p, std::ostream& os) {
   for (const auto& poly : p.polygons) {
     os << poly << '\n';
   }
-  os << p.skelton.size();
+  os << p.skelton.size() << '\n';
   for (const auto& seg : p.skelton) {
     os << seg.first << ' ' << seg.second << '\n';
   }

@@ -3,13 +3,14 @@
 #include <vector>
 
 #include "base/base.h"
-#include "boost/multiprecision/cpp_int.hpp"
+#include "boost/multiprecision/gmp.hpp"
 #include "boost/rational.hpp"
 
 using boost::rational;
 using boost::rational_cast;
 
-typedef boost::multiprecision::cpp_rational Q;
+typedef boost::multiprecision::number<boost::multiprecision::gmp_rational,
+                                      boost::multiprecision::et_off> Q;
 typedef std::complex<Q> C;
 
 namespace std {
@@ -27,13 +28,10 @@ struct Vertex {
 typedef vector<Vertex> Polygon;
 
 bool is_ccw(const Polygon& p) {
-  vector<C> v(p.size());
-  for (int i = 0; i < p.size(); ++i) {
-    v[i] = C(p[i].x - p[0].x, p[i].y - p[0].y);
-  }
   Q area;
-  for (int i = 1; i < v.size() - 1; ++i) {
-    area += (v[i] * std::conj(v[i + 1])).imag();
+  for (int i = 1; i < p.size(); ++i) {
+    area += (p[i].x - p[0].x) * (p[i + 1].y - p[0].y) -
+            (p[i].y - p[0].y) * (p[i + 1].x - p[0].x);
   }
   LOG_IF(ERROR, area == 0) << "Unexpected zero area";
   return area < 0;
