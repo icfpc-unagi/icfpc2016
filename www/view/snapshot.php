@@ -21,6 +21,7 @@ ksort($users);
 ?><html>
 <meta charset="UTF-8">
 <title>Snapshot</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
 <body>
 <h1>Problems</h1>
 <table>
@@ -42,7 +43,7 @@ foreach ($snapshot['problems'] as $problem) {
 </table>
 <h1>Leaderboard</h1>
 <table>
-<tr><td>Rank<td><td>Team name</td><td>Score</td></tr>
+<tr><td>Rank</td><td>Team name</td><td>Score</td></tr>
 <?php
 
 $rank = 1;
