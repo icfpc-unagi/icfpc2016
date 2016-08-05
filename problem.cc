@@ -43,22 +43,34 @@ bool is_ccw(const Polygon& p) {
   return area < 0;
 }
 
-std::istream& operator>>(istream& is, Vertex& v) {
-  string r;
+Q consume_rational(std::istream& is) {
   while (isspace(is.peek())) {
     is.get();
   }
-  std::getline(is, r, ',');
-  v.x.assign(r);
-  while (isspace(is.peek())) {
-    is.get();
+  string buf;
+  while (true) {
+    int c = is.peek();
+    if (isdigit(c) || c == '-' || c == '/') {
+      buf += c;
+      is.get();
+    } else {
+      break;
+    }
   }
-  std::getline(is, r);
-  v.y.assign(r);
+  return Q(buf);
+}
+
+std::istream& operator>>(std::istream& is, Vertex& v) {
+  v.x = consume_rational(is);
+  int c = is.get();
+  if (c != ',') {
+    LOG(ERROR) << "Expected comma but was " << (char)c << ":" << c;
+  }
+  v.y = consume_rational(is);
   return is;
 }
 
-std::istream& operator>>(istream& is, Polygon& p) {
+std::istream& operator>>(std::istream& is, Polygon& p) {
   int n_verts;
   is >> n_verts;
   p.resize(n_verts);
@@ -68,14 +80,20 @@ std::istream& operator>>(istream& is, Polygon& p) {
   return is;
 }
 
-int main() {
+int main(int argc, char** argv) {
+  ParseCommandLineFlags(&argc, &argv);
   int n_polys;
   cin >> n_polys;
   vector<Polygon> polys(n_polys);
   for (int i = 0; i < n_polys; ++i) {
     cin >> polys[i];
   }
-  // TODO: Parse skelton
+  int n_edges;
+  cin >> n_edges;
+  vector<pair<Vertex, Vertex>> edges(n_edges);
+  for (int i = 0; i < n_edges; ++i) {
+    cin >> edges[i].first >> edges[i].second;
+  }
 
   // viewbox size
   Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
@@ -94,7 +112,7 @@ int main() {
     }
   }
   printf(
-      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300px" height="300px" viewBox="%f %f %f %f"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.01"/>)",
+      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300px" height="300px" viewBox="%.3f %.3f %.3f %.3f"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)",
       min_x.convert_to<double>(), min_y.convert_to<double>(),
       Q(max_x - min_x).convert_to<double>(),
       Q(max_y - min_y).convert_to<double>());
@@ -106,8 +124,14 @@ int main() {
              polys[i][j].x.convert_to<double>(),
              polys[i][j].y.convert_to<double>());
     }
-    printf(R"(Z" fill="silver" stroke="%s" stroke-width="0.01" />)",
-           is_positive ? "gray" : "black");
+    printf(R"(Z" fill="%s" stroke="%s" stroke-width="0.005"/>)",
+           is_positive ? "silver" : "white", is_positive ? "gray" : "black");
+  }
+  for (const auto& e : edges) {
+    printf(
+        R"(<path d="M %.3f %.3f L %.3f %.3f" fill="none" stroke="purple" stroke-width="0.002"/>)",
+        e.first.x.convert_to<double>(), e.first.y.convert_to<double>(),
+        e.second.x.convert_to<double>(), e.second.y.convert_to<double>());
   }
   printf("</svg>");
 
