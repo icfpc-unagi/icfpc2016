@@ -1,4 +1,5 @@
 #!/bin/bash
+# submit_solution submits a solution in ICFPC 2016.
 
 source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
 DEFINE_int problem_id 0 'Problem ID.'
