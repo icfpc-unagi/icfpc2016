@@ -27,18 +27,12 @@ if ($problem['problem_id'] != $problem_id) {
   die('Unknown problem id');
 }
 
-$data = NULL;
-if (isset($_POST['data'])) {
-  $data = $_POST['data'];
-} else if (isset($_ENV['data'])) {
-  $data = file_get_contents($_ENV['data']);
-}
-
-if (!is_null($data) && strlen(trim($data)) > 0) {
-  Database::Command('INSERT INTO `solution`{solution}',
-      ['solution' => [
-          'problem_id' => $problem_id,
-          'solution_data' => trim($data) . "\n"]]);
+if (!is_null(GetParameter('solution'))) {
+  include_once(dirname(__FILE__) . '/../exec/add_solution.php');
+  $result = AddSolution();
+  if ($result['code'] != 0) {
+    die('Failed to submit: ' . json_encode($result));
+  }
 }
 
 ?><html>
