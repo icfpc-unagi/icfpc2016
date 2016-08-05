@@ -1,13 +1,11 @@
 #include "base/base.h"
 #include "boost/multiprecision/cpp_int.hpp"
 #include "boost/rational.hpp"
-#include <sstream>
 
 using boost::rational;
 using boost::rational_cast;
 
-typedef boost::multiprecision::cpp_int Integer;
-typedef rational<Integer> Q;
+typedef boost::multiprecision::cpp_rational Q;
 
 struct Vertex {
   Q x;
@@ -16,25 +14,22 @@ struct Vertex {
 
 typedef vector<Vertex> Polygon;
 
-istream& operator>>(istream& is, Q& q) {
-  int num, den;
-  is >> num;
-  if (is.get() == '/') {
-    is >> den;
-    q = Q(num, den);
-  } else {
-    is.unget();
-    q = Q(num);
+std::istream& operator>>(istream& is, Vertex& v) {
+  string r;
+  while (isspace(is.peek())) {
+    is.get();
   }
+  std::getline(is, r, ',');
+  v.x.assign(r);
+  while (isspace(is.peek())) {
+    is.get();
+  }
+  std::getline(is, r);
+  v.y.assign(r);
   return is;
 }
 
-istream& operator>>(istream& is, Vertex& v) {
-  char comma;
-  return is >> v.x >> comma >> v.y;
-}
-
-istream& operator>>(istream& is, Polygon& p) {
+std::istream& operator>>(istream& is, Polygon& p) {
   int n_verts;
   is >> n_verts;
   p.resize(n_verts);
@@ -53,17 +48,28 @@ int main() {
   }
   // TODO: Parse skelton
 
-  printf(
-      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300px" height="300px" viewBox="0 0 1 1"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.01"/>)");
+  Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
   for (int i = 0; i < n_polys; ++i) {
-    std::stringstream path;
-    for (int j = 0; j < polys[i].size(); ++j) {
-      path << (j == 0 ? "M " : "L ") << rational_cast<double>(polys[i][j].x)
-           << " " << rational_cast<double>(polys[i][j].y) << " ";
+    for (const auto& v : polys[i]) {
+      if (v.x < min_x) min_x = v.x;
+      if (max_x < v.x) max_x = v.x;
+      if (v.y < min_y) min_y = v.y;
+      if (max_y < v.y) max_y = v.y;
     }
-    path << "Z";
-    printf(R"(<path d="%s" fill="silver" stroke="gray" stroke-width="0.01" />)",
-           path.str().c_str());
+  }
+  printf(
+      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300px" height="300px" viewBox="%f %f %f %f"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.01"/>)",
+      min_x.convert_to<double>(), min_y.convert_to<double>(),
+      Q(max_x - min_x).convert_to<double>(),
+      Q(max_y - min_y).convert_to<double>());
+  for (int i = 0; i < n_polys; ++i) {
+    printf(R"(<path d=")");
+    for (int j = 0; j < polys[i].size(); ++j) {
+      printf("%c %.8f %.8f ", j == 0 ? 'M' : 'L',
+             polys[i][j].x.convert_to<double>(),
+             polys[i][j].y.convert_to<double>());
+    }
+    printf(R"(Z" fill="silver" stroke="gray" stroke-width="0.01" />)");
   }
   printf("</svg>");
 
