@@ -44,6 +44,11 @@ using Bigrat = bm::number<bm::gmp_rational, bm::et_off>;
 using Point = bg::model::d2::point_xy<Bigrat>;
 using Segment = bg::model::segment<Point>;
 using Polygon = bg::model::polygon<Point, false>;
+using pii = pair<int, int>;
+
+pii MakePairUnordered(int a, int b) {
+  return mp(min(a, b), max(a,b));
+}
 
 inline string ReadAllAndRemoveComma(istream &is) {
   string in;
@@ -74,4 +79,45 @@ inline int Quadrant(const Point &p) {
 
 inline Bigrat Det(const Point &a, const Point &b) {
   return a.x() * b.y() - a.y() * b.x();
+}
+
+// NOTE: it returns all the regions, including outer one!
+vector<vector<int>> EnumerateRegions
+(const vector<Point> &coords, const vector<vector<int>> &adj) {
+  map<pii, pii> nxt;
+  rep (i, coords.size()) {
+    const Point &p = coords[i];
+    vector<int> ord = adj[i];
+    sort(all(ord), [&] (const int a, const int b) -> bool {
+        Point av = coords[a], bv = coords[b];
+        bg::subtract_point(av, p);
+        bg::subtract_point(bv, p);
+        int aq = Quadrant(av), bq = Quadrant(bv);
+        if (aq != bq) return aq < bq;
+        else return Det(av, bv) > 0;
+      });
+
+    rep (j, ord.size()) {
+      nxt[mp(ord[(j + 1) % ord.size()], i)] = mp(i, ord[j]);
+    }
+  }
+
+  vector<vector<int>> regions;
+  set<pii> usd;
+  rep (i, coords.size()) {
+    for (int j : adj[i]) {
+      if (usd.count(mp(i, j))) continue;
+
+      vector<int> reg;
+      int a = i, b = j;
+      while (usd.count(mp(a, b)) == 0) {
+        reg.emplace_back(a);
+        usd.insert(mp(a, b));
+        tie(a, b) = nxt.at(mp(a, b));
+      }
+      regions.emplace_back(reg);
+    }
+  }
+
+  return regions;
 }
