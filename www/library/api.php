@@ -2,6 +2,41 @@
 
 require_once(dirname(__FILE__) . '/config.php');
 // define('DEBUG_MODE', 'sql');
+define('API_HOST', 'http://db.sx9.jp');
+
+function Fail($message, $status = '400 Bad Request') {
+  header('HTTP/1.1 ' . $status);
+  echo trim($message) . "\n";
+  exit();
+}
+
+function Execute($params) {
+  $output = file_get_contents(
+      API_HOST . '/exec.php?' . http_build_query($params));
+  if (strlen($output) == 0) {
+    return NULL;
+  }
+  return json_decode($output, TRUE);
+}
+
+function GetParameter($name) {
+  if (isset($_REQUEST[$name])) {
+    return $_REQUEST[$name];
+  } else if (isset($_ENV[$name])) {
+    return $_ENV[$name];
+  } else if (isset($_ENV[$name . '_file'])) {
+    return file_get_contents($_ENV[$name . '_file']);
+  }
+  return NULL;
+}
+
+function GetParameterOrDie($name) {
+  $result = GetParameter($name);
+  if (is_null($result)) {
+    Fail("$name is required.");
+  }
+  return $result;
+}
 
 function GetToken() {
   for ($i = 0; $i < 10; $i++) {

@@ -42,7 +42,7 @@ foreach ($params as $key => $value) {
     $temp = tempnam(sys_get_temp_dir(), 'tmp');
     file_put_contents($temp, $value);
     $files[] = $temp;
-    $flags .= ' ' . escapeshellarg("--{$match[0]}=$temp");
+    $flags .= ' ' . escapeshellarg("--{$match[1]}=$temp");
   } else {
     $flags .= ' ' . escapeshellarg("--$key=$value");
   }
