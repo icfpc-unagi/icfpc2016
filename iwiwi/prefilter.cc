@@ -88,8 +88,6 @@ void SegmentArrangement() {
         return a.x() == b.x() && a.y() == b.y();
       }), coords.end());
 
-  cout << bg::comparable_distance(coords[0], coords[1]) << endl;
-
   // Constructing the graph
   adj.assign(coords.size(), vector<int>());
   for (const auto &s : skeleton) {
