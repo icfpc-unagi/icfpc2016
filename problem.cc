@@ -2,9 +2,10 @@
 #include "boost/multiprecision/cpp_int.hpp"
 #include "boost/rational.hpp"
 
+using namespace std;
+
 using boost::rational;
 using boost::rational_cast;
-using std::istream;
 
 typedef boost::multiprecision::cpp_rational Q;
 
