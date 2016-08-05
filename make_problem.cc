@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     const auto& irings = bg::interior_rings(poly);
     for (const auto& iring : irings) {
       problem.polygons.emplace_back(iring.size());
-      std::transform(iring.rbegin(), iring.rend(),
+      std::transform(iring.begin(), iring.end(),
                      problem.polygons.back().begin(), &ConvertToVertex);
     }
   }
