@@ -121,7 +121,7 @@ parseP str = let
     assert (read nstr == length is) $ is
 
 prettyV :: Qi -> S
-prettyV (Cpx x y) = prettyQ x ++ ", " ++ prettyQ y
+prettyV (Cpx x y) = prettyQ x ++ "," ++ prettyQ y
 
 prettyQ :: Q -> S
 prettyQ x
