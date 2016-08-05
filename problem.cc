@@ -1,99 +1,38 @@
 #include <complex>
 #include <vector>
+#include <fstream>
 
 #include "base/base.h"
 #include "boost/multiprecision/cpp_int.hpp"
 #include "boost/rational.hpp"
+#include "polygon.h"
 
 DEFINE_bool(expand_viewbox, true,
             "Expand viewbox to covert the entire silhouette.");
 DEFINE_bool(shrink_viewbox, true,
             "Shrink viewbox to fit silhouette and hide the original rect.");
+DEFINE_string(input, "/dev/stdin", "input problem file");
 
 using boost::rational;
 using boost::rational_cast;
 using namespace std;
 
-typedef boost::multiprecision::cpp_rational Q;
-typedef std::complex<Q> C;
-
-namespace std {
-// Dummy functions for std::complex
-bool isnan(const Q& q) { return false; }
-bool isinf(const Q& q) { return false; }
-Q copysign(const Q& x, const Q& y) { return x.sign() != y.sign() ? -x : x; }
-}
-
-struct Vertex {
-  Q x;
-  Q y;
-};
-
-typedef vector<Vertex> Polygon;
-
-bool is_ccw(const Polygon& p) {
-  vector<C> v(p.size());
-  for (int i = 0; i < p.size(); ++i) {
-    v[i] = C(p[i].x - p[0].x, p[i].y - p[0].y);
-  }
-  Q area;
-  for (int i = 1; i < v.size() - 1; ++i) {
-    area += (v[i] * std::conj(v[i + 1])).imag();
-  }
-  LOG_IF(ERROR, area == 0) << "Unexpected zero area";
-  return area < 0;
-}
-
-Q consume_rational(std::istream& is) {
-  while (isspace(is.peek())) {
-    is.get();
-  }
-  string buf;
-  while (true) {
-    int c = is.peek();
-    if (isdigit(c) || c == '-' || c == '/') {
-      buf += c;
-      is.get();
-    } else {
-      break;
-    }
-  }
-  return Q(buf);
-}
-
-std::istream& operator>>(std::istream& is, Vertex& v) {
-  v.x = consume_rational(is);
-  int c = is.get();
-  if (c != ',') {
-    LOG(ERROR) << "Expected comma but was " << (char)c << ":" << c;
-  }
-  v.y = consume_rational(is);
-  return is;
-}
-
-std::istream& operator>>(std::istream& is, Polygon& p) {
-  int n_verts;
-  is >> n_verts;
-  p.resize(n_verts);
-  for (int i = 0; i < n_verts; ++i) {
-    is >> p[i];
-  }
-  return is;
-}
-
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv);
+
+  std::ifstream ifs(FLAGS_input);
+
   int n_polys;
-  cin >> n_polys;
+  ifs >> n_polys;
   vector<Polygon> polys(n_polys);
   for (int i = 0; i < n_polys; ++i) {
-    cin >> polys[i];
+    ifs >> polys[i];
   }
   int n_edges;
-  cin >> n_edges;
+  ifs >> n_edges;
   vector<pair<Vertex, Vertex>> edges(n_edges);
   for (int i = 0; i < n_edges; ++i) {
-    cin >> edges[i].first >> edges[i].second;
+    ifs >> edges[i].first >> edges[i].second;
   }
 
   // viewbox size
