@@ -94,6 +94,12 @@ int main(int argc, char** argv) {
     }
     printf(R"(Z"/>)");
   }
+  for (int i = 0; i < n_verts; ++i) {
+    printf(
+        R"(<circle fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)",
+        dst_verts[i].x.convert_to<double>(),
+        dst_verts[i].y.convert_to<double>());
+  }
   printf("</svg>");
 
   return 0;
