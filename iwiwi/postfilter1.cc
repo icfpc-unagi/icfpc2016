@@ -67,7 +67,7 @@ int main() {
       src_ccw[i] = bg::area(src_polygons[fs[i]]) > 0;
       dst_ccw[i] = bg::area(dst_polygons[fs[i]]) > 0;
     }
-    if (src_ccw == dst_ccw) {
+    if ((src_ccw[0] == src_ccw[1]) == (dst_ccw[0] == dst_ccw[1])) {
       cerr << "JOIN: " << fs[0] << "-" << fs[1]
            << "(edge: " << t.first.first << "," << t.first.second << ")" << endl;
       unnecessary_edges.insert(t.first);
