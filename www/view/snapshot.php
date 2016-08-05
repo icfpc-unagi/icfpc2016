@@ -40,9 +40,12 @@ foreach (Database::Select('
 
 foreach ($snapshot['problems'] as $problem) {
   $solved = 0;
+  $resemblance = 0.0;
   foreach ($problem['ranking'] as $rank) {
     if ($rank['resemblance'] == 1) {
       $solved++;
+    } else {
+      $resemblance = max($resemblance, $rank['resemblance']);
     }
   }
   $solution = $solutions[intval($problem['problem_id'])];
@@ -52,7 +55,11 @@ foreach ($snapshot['problems'] as $problem) {
   echo '<td>' . htmlspecialchars($users[$problem['owner']]) . "</td>";
   echo '<td>' . $problem['problem_size'] . "</td>";
   echo '<td>' . $problem['solution_size'] . "</td>";
-  echo '<td>' . $solved . '</td>';
+  if ($solved > 0) {
+    echo '<td>' . $solved . '</td>';
+  } else {
+    echo '<td>(' . $resemblance . ')</td>';
+  }
   echo '<td><a href="solution.php?problem_id=' . $problem['problem_id'] . '">';
   if (!isset($solution['solution_count'])) {
     echo 'No';
