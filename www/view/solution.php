@@ -71,12 +71,9 @@ foreach (Database::Select('
   echo '<td>' . $solution['solution_id'] . '</td>';
   echo '<td>' . $solution['problem_id'] . '</td>';
   echo '<td>' . $solution['solution_resemblance'] . '</td>';
-  echo '<td>N/A</td>';
-  echo '<td>' . (is_null($solution['solution_submission'])
-                 ? 'N/A'
-                 : date('Y-m-d H:i:s', $solution['solution_submission'])) .
-       '</td>';
-  echo '<td>' . date('Y-m-d H:i:s', $solution['solution_created']) . '</td>';
+  echo '<td><a href="solution_data.php?solution_id='$solution['solution_id'] . '">View</a></td>';
+  echo '<td>' . $solution['solution_submission'] . '</td>';
+  echo '<td>' . $solution['solution_created'] . '</td>';
   echo "</tr>\n";
 }
 
