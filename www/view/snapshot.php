@@ -25,7 +25,7 @@ ksort($users);
 <body>
 <h1>Problems</h1>
 <table>
-<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Publish Time<td></tr>
+<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time<td></tr>
 <?php
 
 foreach ($snapshot['problems'] as $problem) {
@@ -41,7 +41,9 @@ foreach ($snapshot['problems'] as $problem) {
   echo '<td>' . htmlspecialchars($users[$problem['owner']]) . "</td>";
   echo '<td>' . $problem['problem_size'] . "</td>";
   echo '<td>' . $problem['solution_size'] . "</td>";
-  echo '<td>' . $solved . "</td>";
+  echo '<td>' . $solved . '</td>';
+  echo '<td><a href="solution.php?problem_id=' . $problem['problem_id'] .
+       '">Soluions</a></td>';
   echo '<td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</td>";
   echo "</tr>\n";
 }

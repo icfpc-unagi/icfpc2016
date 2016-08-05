@@ -12,7 +12,7 @@ if (php_sapi_name() == 'cli') {
   $hash = $argv[1];
 } else {
   header('Content-Type: text/plain');
-  $hash = $_GET['hash'];
+  $hash = $_GET['blob_id'];
 }
 
 echo GetBlob($hash);
