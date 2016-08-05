@@ -72,9 +72,9 @@ int main(int argc, char** argv) {
   }
   printf(
       R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round">)",
-      min_x.convert_to<double>() - 0.005, min_y.convert_to<double>() - 0.005,
-      Q(max_x - min_x).convert_to<double>() + 0.01,
-      Q(max_y - min_y).convert_to<double>() + 0.01);
+      min_x.convert_to<double>() - 0.0025, min_y.convert_to<double>() - 0.0025,
+      Q(max_x - min_x).convert_to<double>() + 0.005,
+      Q(max_y - min_y).convert_to<double>() + 0.005);
   if (!FLAGS_shrink_viewbox) {
     printf(
         R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
              polys[i][j].x.convert_to<double>(),
              polys[i][j].y.convert_to<double>());
     }
-    printf(R"(Z)");
+    printf("Z");
   }
   printf(
       R"("/><g fill="none" stroke="purple" stroke-width="0.003">)");
