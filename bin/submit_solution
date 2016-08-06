@@ -17,7 +17,7 @@ fi
 
 curl --dump-header - --silent \
      -H 'Expect: ' \
-     -F "solution=$(cat "${FLAGS_solution}")" \
+     -F "solution=@${FLAGS_solution}" \
      -F "problem_id=${FLAGS_problem_id}" \
      -F "solution_ai=${FLAGS_solution_ai}" \
     'http://db.sx9.jp/exec/add_solution.php' | \
