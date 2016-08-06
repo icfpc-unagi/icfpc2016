@@ -27,7 +27,7 @@ function AddSolution() {
   $solution = FormatData($solution);
 
   if (trim($solution) == '') {
-    if (!is_null($solution_ai)) {
+    if (!is_null($solution_ai) && $solution_ai != '') {
       Database::Command('
           INSERT INTO `solution`{solution}',
           ['solution' => [
