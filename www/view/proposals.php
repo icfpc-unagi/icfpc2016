@@ -17,7 +17,7 @@ foreach (Database::Select('
         `proposal_id`,
         `problem_id`,
         `proposal_note`,
-        LENGTH(`proposal_data`) AS `problem_size`,
+        LENGTH(`proposal_problem`) AS `problem_size`,
         LENGTH(`proposal_solution`) AS `solution_size`,
         `proposal_submission`,
         `proposal_modified`
