@@ -23,6 +23,7 @@
 
 DEFINE_string(problem, "", "input problem file");
 DEFINE_string(solution, "", "input solution file");
+DEFINE_bool(show_figure, false, "show rich output");
 
 namespace bg = boost::geometry;
 
