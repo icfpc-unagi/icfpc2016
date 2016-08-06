@@ -1,0 +1,3 @@
+#!/bin/bash
+
+curl --silent -F "solution_ai=none" 'http://db.sx9.jp/exec/candidates.php'
