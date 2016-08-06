@@ -1,0 +1,16 @@
+#!/bin/bash
+# submit_solution submits a solution in ICFPC 2016.
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
+DEFINE_string solution '' 'Path for solution.'
+eval "${IMOSH_INIT}"
+
+if [ "${FLAGS_solution}" == '' ]; then
+  LOG FATAL '--solution is required.'
+fi
+
+curl --dump-header - --silent \
+     -H 'Expect: ' \
+     -F "solution=$(cat "${FLAGS_solution}")" \
+    'http://db.sx9.jp/exec/solution.php' | \
+php "$(dirname "${BASH_SOURCE}")/library/parse.php"
