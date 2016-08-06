@@ -72,7 +72,10 @@ foreach ($snapshot['problems'] as $problem) {
     }
   }
   $solution = $solutions[intval($problem['problem_id'])];
-  if ($compact && $solution['all']['solution_resemblance'] == 1) continue;
+  if ($compact) {
+    if ($solution['all']['solution_resemblance'] == 1) continue;
+    if ($problem['owner'] == '42') continue;
+  }
   echo '<tr>';
   echo '<td><a href="problem.php?problem_id=' . $problem['problem_id'] .
        '">' . $problem['problem_id'] . "</a></td>";
