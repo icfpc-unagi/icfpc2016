@@ -89,7 +89,7 @@ public class FastSolver extends Solver {
 		for (Border b : s.border) {
 			for (int i = 0; i < 2; i++) {
 				if (b.poly[1 - i] == null) {
-					return rec(place(s, b.poly[i]));
+					return canPlace(s, b.poly[i]) && rec(place(s, b.poly[i]));
 				}
 			}
 		}
@@ -127,7 +127,7 @@ public class FastSolver extends Solver {
 		for (Border b : s.border) if (b.bb.crs(poly.bb)) {
 			for (int i = 0; i < poly.ps.length; i++) {
 				P p1 = poly.ps[i], p2 = poly.ps[(i + 1) % poly.ps.length];
-				if (P.crsSS2(b.p1, b.p2, p1, p2)) return false;
+				if (P.crsSS2(s.ps[b.p1], s.ps[b.p2], p1, p2)) return false;
 			}
 		}
 		R remain = s.remainingArea();
@@ -162,7 +162,7 @@ public class FastSolver extends Solver {
 		}
 		ArrayList<Border> bs = new ArrayList<Border>();
 		for (Border b : s.border) {
-			if (!set.remove(Utils.pair(s.pid.get(b.p2), s.pid.get(b.p1)))) {
+			if (!set.remove(Utils.pair(b.p2, b.p1))) {
 				bs.add(new Border(b));
 			}
 		}
@@ -173,14 +173,16 @@ public class FastSolver extends Solver {
 				if (t.ps[p1].y.compareTo(ly) == 0 && t.ps[p2].y.compareTo(ly) == 0) continue;
 				if (t.ps[p1].x.compareTo(ux) == 0 && t.ps[p2].x.compareTo(ux) == 0) continue;
 				if (t.ps[p1].y.compareTo(uy) == 0 && t.ps[p2].y.compareTo(uy) == 0) continue;
-				Border b = new Border(t.ps[p1], t.ps[p2]);
+				Border b = new Border(p1, p2, t.ps[p1], t.ps[p2]);
 				Long e1 = edgesSkeleton.get(Utils.pair(t.cor[p2], t.cor[p1]));
 				Long e2 = edgesSkeleton.get(Utils.pair(t.cor[p1], t.cor[p2]));
 				if (e1 != null) {
 					b.poly[0] = placePoly(t.ps[p2], t.ps[p1], (int)(e1 >> 32), e1.intValue(), false);
+					if (b.poly[0] != null && b.poly[0].pid == poly.pid) b.fold[0] = true;
 				}
 				if (e2 != null) {
 					b.poly[1] = placePoly(t.ps[p1], t.ps[p2], (int)(e2 >> 32), e2.intValue(), true);
+					if (b.poly[1] != null && b.poly[1].pid == poly.pid) b.fold[1] = true;
 				}
 				bs.add(b);
 			}
@@ -344,7 +346,7 @@ public class FastSolver extends Solver {
 				vis.g.draw(path);
 			}
 			vis.g.setColor(Color.GREEN);
-			for (Border b : border) vis.g.draw(vis.segment(b.p1.x.getDouble(), b.p1.y.getDouble(), b.p2.x.getDouble(), b.p2.y.getDouble()));
+			for (Border b : border) vis.g.draw(vis.segment(ps[b.p1].x.getDouble(), ps[b.p1].y.getDouble(), ps[b.p2].x.getDouble(), ps[b.p2].y.getDouble()));
 			vis.vis(true);
 			vis.dispose();
 		}
