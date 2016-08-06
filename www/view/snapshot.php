@@ -85,7 +85,7 @@ foreach ($snapshot['problems'] as $problem) {
   } else if ($solution['submitted']['solution_resemblance'] ==
              $solution['all']['solution_resemblance']) {
     echo $solution['submitted']['solution_resemblance'];
-  } else if (is_null($solution['solution_resemblance'])) {
+  } else if (is_null($solution['all']['solution_resemblance'])) {
     echo '??????';
   } else {
     echo '<span style="color:#888">(' . $solution['solution_resemblance'] .
