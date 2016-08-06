@@ -1,0 +1,36 @@
+#!/bin/bash
+# submit_solution submits a solution in ICFPC 2016.
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
+DEFINE_string ai '' 'AI name.'
+DEFINE_int threads 5 'Number of threads.'
+DEFINE_int timeout 30 'Timeout'
+eval "${IMOSH_INIT}"
+
+if [ "${FLAGS_ai}" == '' ]; then
+  LOG FATAL '--ai is required.'
+fi
+
+solve_problem() {
+  local problem_id="$1"
+  local problem_file="$(sub::tmpfile)"
+  local solution_file="$(sub::tmpfile)"
+
+  LOG INFO "${FLAGS_ai} AI is solving ${problem_id}..."
+  curl --silent "http://db.sx9.jp/view/problem.php?plain=1&problem_id=${problem_id}" > "${problem_file}"
+  ninelet timeout "${FLAGS_timeout}s" "/alloc/global/ai/${FLAGS_ai}" \
+      < "${problem_file}" > "${solution_file}" || true
+  LOG INFO "${FLAGS_ai} AI is submitting ${problem_id}..."
+  "$(dirname "${BASH_SOURCE}")/submit_solution" \
+      --problem_id="${problem_id}" \
+      --solution="${solution_file}" \
+      --solution_ai="${FLAGS_ai}"
+}
+
+for problem_id in $(
+    curl --silent -F "solution_ai=${FLAGS_ai}" \
+        'http://db.sx9.jp/exec/candidates.php'); do
+  solve_problem "${problem_id}" &
+  sub::throttle "${FLAGS_threads}"
+done
+wait
