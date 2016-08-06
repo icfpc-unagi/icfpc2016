@@ -44,8 +44,10 @@ function Score($solution) {
        'solution_resemblance' => $resemblance]);
 }
 
-Score(Database::SelectRow('
-    SELECT `solution_id`, `problem_id`, `solution_data`
-    FROM `solution`
-    WHERE `solution_resemblance` IS NULL
-    LIMIT 1'));
+for ($i = 0; $i < 3; $i++) {
+  Score(Database::SelectRow('
+      SELECT `solution_id`, `problem_id`, `solution_data`
+      FROM `solution`
+      WHERE `solution_resemblance` IS NULL
+      LIMIT 1'));
+}
