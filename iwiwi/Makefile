@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -O2 -std=c++0x -Wall -Wextra -lgmp
 
-all: bin bin/prefilter bin/postfilter1 bin/postfilter2
+all: bin bin/prefilter bin/postfilter1 bin/postfilter2 bin/score
 
 bin:
 	mkdir -p bin
@@ -13,6 +13,9 @@ bin/postfilter1: postfilter1.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 bin/postfilter2: postfilter2.cc
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+bin/score: score.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 .PHONY: clean
