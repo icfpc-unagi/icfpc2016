@@ -25,7 +25,9 @@ echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
 ?></title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 <body>
-<h1>Problems</h1>
+<h1>Problems at <?php
+echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
+?></h1>
 <table>
 <tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time</td></tr>
 <?php
