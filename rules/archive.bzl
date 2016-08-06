@@ -5,6 +5,7 @@ def archive(binary, **kargs):
         ":" + binary,
         "//bin:imos-package",
         "//bin:imos-variables",
+        "//bin:imosh",
         "//rules:package",
       ],
       outs = [binary + ".ar"],
