@@ -32,7 +32,7 @@ foreach ($snapshot['problems'] as $problem) {
       $resemblance = max($resemblance, $rank['resemblance']);
     }
   }
-  if ($solved > 10) {
+  if ($solved >= 3) {
     $problems[$problem['problem_id']]['easy'] = TRUE;
   }
 }
@@ -48,7 +48,7 @@ if (count($problem_ids) > 0) {
   Database::Command('
       UPDATE `solution` SET `solution_lock` = UNIX_TIMESTAMP()
       WHERE `problem_id` IN (' . implode(', ', $problem_ids) . ') AND
-            `solution_lock` > UNIX_TIMESTAMP()');
+            `solution_lock` > 1483196400');
   echo Database::AffectedRows() . "\n";
 } else {
   echo "0\n";
