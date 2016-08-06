@@ -17,6 +17,7 @@ function GetCronToken($name, $duration) {
 function Run() {
   $output = '';
   $output .= trim(file_get_contents('http://db.sx9.jp/view/submit.php')) . "\n";
+  $output .= trim(file_get_contents('http://db.sx9.jp/view/score.php')) . "\n";
   $output .= trim(file_get_contents('http://db.sx9.jp/view/submit_problem.php')) . "\n";
   if (GetCronToken('unlock_auto', 30)) {
     $output .= 'Unlock auto: ' . trim(file_get_contents('http://db.sx9.jp/view/unlock_auto.php')) . "\n";
