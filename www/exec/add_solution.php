@@ -5,6 +5,8 @@ require_once(dirname(__FILE__) . '/../library/api.php');
 function AddSolution() {
   $problem_id = GetParameterOrDie('problem_id');
   $solution = GetParameterOrDie('solution');
+  $solution_ai = GetParameter('solution_ai');
+  if (is_null($solution_ai)) { $solution_ai = ''; }
   $snapshot = GetSnapshot();
 
   foreach ($snapshot['problems'] as $problem) {
@@ -47,10 +49,12 @@ function AddSolution() {
   $solution_id = Database::SelectCell('
       SELECT `solution_id` FROM `solution`
       WHERE `problem_id` = {problem_id} AND
-            `solution_data` = {solution_data}
+            `solution_data` = {solution_data} AND
+            `solution_ai` = {solution_ai}
       ORDER BY `solution_id` LIMIT 1',
       ['problem_id' => $problem_id,
-       'solution_data' => FormatData($solution)]);
+       'solution_data' => FormatData($solution),
+       'solution_ai' => $solution_ai]);
   if ($solution_id) {
     $result['stdout'] = 'duplicated with solution_id=' . $solution_id;
     return $result;
@@ -59,7 +63,8 @@ function AddSolution() {
   Database::Command('INSERT INTO `solution`{solution}',
       ['solution' => [
           'problem_id' => $problem_id,
-          'solution_data' => FormatData($solution)]]);
+          'solution_data' => FormatData($solution),
+          'solution_ai' => $solution_ai]]);
 
   return $result;
 }
