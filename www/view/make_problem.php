@@ -9,7 +9,7 @@ $solution = GetParameter('solution');
 <title>Solutions</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 <body>
-<h1>Preview Solution</h1>
+<h1>Make Problem</h1>
 <form action="?" method="POST">
 <textarea name="solution" style="width:100%;height:200px"><?php
 if (!is_null($solution)) {
@@ -26,9 +26,9 @@ if (!is_null($solution)) {
                      'alsologtostderr' => 1,
                      'stdin' => $solution]);
   if ($result['code'] == 0) {
-    echo '<pre>';
+    echo '<textarea name="solution" style="width:100%;height:200px">';
     echo $result['stdout'];
-    echo '</pre>';
+    echo '</textarea>';
     unset($result['stdout']);
   }
 
