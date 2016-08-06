@@ -2,6 +2,17 @@
 
 require_once(dirname(__FILE__) . '/../library/api.php');
 
+$snapshot = GetSnapshot();
+$problem_id = GetParameter('problem_id');
+foreach ($snapshot['problems'] as $problem) {
+  if ($problem['problem_id'] == $problem_id) {
+    break;
+  }
+}
+if ($problem['problem_id'] != $problem_id) {
+  $problem = NULL;
+}
+
 $solution_id = NULL;
 if (isset($_GET['solution_id'])) {
   $solution_id = $_GET['solution_id'];
@@ -23,6 +34,8 @@ if ($data === FALSE) {
 <link rel="stylesheet" type="text/css" href="/style.css">
 <body>
 <h1>Figure</h1>
+<table>
+<tr><td>
 <?php
 
 function Draw($data) {
@@ -50,6 +63,37 @@ function Draw($data) {
 Draw($data);
 
 ?>
+</td><td>
+<?php
+
+function DrawProblem($data) {
+  $process = proc_open(
+      'timeout 10s /alloc/global/bin/problem --noshrink_viewbox',
+      [0 => ['pipe', 'r'],
+       1 => ['pipe', 'w'],
+       2 => ['pipe', 'w']],
+      $pipes, NULL, NULL);
+  if ($process === NULL) {
+    echo 'Failed to run problem.';
+    return;
+  }
+  fwrite($pipes[0], str_replace("\r\n", "\n", $data));
+  fclose($pipes[0]);
+  echo stream_get_contents($pipes[1]);
+  $stderr = stream_get_contents($pipes[2]);
+  if (strlen($stderr) > 0) {
+    echo "<h2>Standard Error</h2>\n";
+    echo "<pre>" . htmlspecialchars(trim($stderr)) . "</pre>\n";
+  }
+  $return_value = proc_close($process);
+}
+
+if (!is_null($problem)) {
+  DrawProblem(GetBlob($problem['problem_spec_hash']));
+}
+
+?>
+</td></tr></table>
 <h1>Data</h1>
 <textarea style="width:100%;height:300px;font-size:100%;font-family:monospace"><?php echo htmlspecialchars($data); ?></textarea>
 </body>
