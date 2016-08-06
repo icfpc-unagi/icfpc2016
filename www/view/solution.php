@@ -50,6 +50,7 @@ if (!is_null(GetParameter('solution'))) {
 <tr><td>Solution ID</td><td>Problem ID</td><td>Resemblance</td><td>Data</td><td>Size</td><td>Submission Time</td><td>Created Time</td></tr>
 <?php
 
+
 foreach (Database::Select('
     SELECT
       `solution_id`,
@@ -57,13 +58,22 @@ foreach (Database::Select('
       `solution_resemblance`,
       `solution_submission`,
       LENGTH(`solution_data`) AS `solution_size`,
+      `solution_lock`,
       `solution_created`
     FROM `solution`
     WHERE `problem_id` = {problem_id}
     ORDER BY `solution_submission` DESC, `solution_created` DESC',
     ['problem_id' => intval($problem_id)]) as $solution) {
-  echo '<tr>';
-  echo '<td>' . $solution['solution_id'] . '</td>';
+  if ($solution['solution_lock'] > 1483196400 &&
+      !$solution['solution_submission']) {
+    echo '<tr style="background:#ccc">';
+    echo '<td>' . $solution['solution_id'] .
+         ' (<a href="unlock.php?solution_id=' . $solution['solution_id'] .
+         '&problem_id=' . $solution['problem_id'] . '">Unlock</a>)</td>';
+  } else {
+    echo '<tr>';
+    echo '<td>' . $solution['solution_id'] . '</td>';
+  }
   echo '<td>' . $solution['problem_id'] . '</td>';
   echo '<td>' . $solution['solution_resemblance'] . '</td>';
   echo '<td><a href="solution_data.php?solution_id=' . $solution['solution_id'] . '">View</a></td>';
