@@ -6,31 +6,6 @@ function Fail($status, $message) {
   exit;
 }
 
-function Run($command, $input) {
-  $process = proc_open(
-      $command,
-      [0 => ['pipe', 'r'],
-       1 => ['pipe', 'w'],
-       2 => ['pipe', 'w']],
-      $pipes, NULL, NULL);
-  if ($process === NULL) {
-    Fail('500 Internal Error', "Failed to run $command");
-  }
-  fwrite($pipes[0], str_replace("\r\n", "\n", $input));
-  fclose($pipes[0]);
-  $stdout = '';
-  $stderr = '';
-  while (!feof($pipes[1]) || !feof($pipes[2])) {
-    $stdout .= stream_get_contents($pipes[1]);
-    $stderr .= stream_get_contents($pipes[2]);
-  }
-  $return_value = proc_close($process);
-  return ['command' => $command,
-          'stdout' => $stdout,
-          'stderr' => $stderr,
-          'code' => $return_value];
-}
-
 $params = $_REQUEST;
 ksort($params);
 $files = [];
@@ -64,8 +39,20 @@ if (strlen($command) == 0) {
   Fail('400 Bad Request', 'command is required');
 }
 
-echo json_encode(Run(
-    'timeout 10s /alloc/global/bin/' .$command . $flags, $input));
+$stdin = tempnam(sys_get_temp_dir(), 'tmp');
+$stdout = tempnam(sys_get_temp_dir(), 'tmp');
+$stderr = tempnam(sys_get_temp_dir(), 'tmp');
+$return = tempnam(sys_get_temp_dir(), 'tmp');
+$files[] = $stdin;
+$files[] = $stdout;
+$files[] = $stderr;
+$files[] = $return;
+exec("timeout 10s /alloc/global/bin/$command$flags < $stdin >$stdout 2>$stderr; echo \$? > $return");
+echo json_encode([
+    'command' => "$command$flags",
+    'stdout' => file_get_contents($stdout),
+    'stderr' => file_get_contents($stderr),
+    'code' => intval(file_get_contents($return))]) . "\n";
 
 foreach ($files as $file) {
   @unlink($file);
