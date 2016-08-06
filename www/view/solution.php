@@ -57,7 +57,8 @@ foreach (Database::Select('
       `problem_id`,
       `solution_resemblance`,
       `solution_submission`,
-      LENGTH(`solution_data`) AS `solution_size`,
+      LENGTH(REPLACE(REPLACE(REPLACE(
+          `solution_data`, "\n", ""), "\r", ""), " ", "")) AS `solution_size`,
       `solution_lock`,
       `solution_created`
     FROM `solution`
