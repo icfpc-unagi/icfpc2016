@@ -28,6 +28,7 @@ function Run($command, $input) {
 }
 
 $params = $_REQUEST;
+ksort($params);
 $files = [];
 $command = '';
 $input = '';
@@ -45,7 +46,11 @@ foreach ($params as $key => $value) {
     $temp = tempnam(sys_get_temp_dir(), 'tmp');
     file_put_contents($temp, $value);
     $files[] = $temp;
-    $flags .= ' ' . escapeshellarg("--{$match[1]}=$temp");
+    $key = $match[1];
+    $value = $temp;
+  }
+  if (preg_match('%^arg(\\d+)$%', $key)) {
+    $flags .= ' ' . escapeshellarg("$value");
   } else {
     $flags .= ' ' . escapeshellarg("--$key=$value");
   }
