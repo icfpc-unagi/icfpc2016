@@ -28,6 +28,12 @@ function AddSolution() {
     Fail('Solution is empty');
   }
 
+  $filter = Execute(['command' => 'postfilter', 'stdin' => $solution]);
+  if ($filter['code'] != 0) {
+    return $filter;
+  }
+  $solution = $filter['stdout'];
+
   $result = Execute([
       'command' => 'validate',
       'alsologtostderr' => 1,
