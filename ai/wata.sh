@@ -2,7 +2,13 @@
 
 set -e -u
 
-"${BASH_SOURCE}.runfiles/iwiwi/prefilter" |
-java -jar "${BASH_SOURCE}.runfiles/wata/wata_deploy.jar" |
-"${BASH_SOURCE}.runfiles/iwiwi/postfilter1" |
-"${BASH_SOURCE}.runfiles/iwiwi/postfilter2"
+if [ -d "${BASH_SOURCE}.runfiles/__main__" ]; then
+  BASE_DIR="${BASH_SOURCE}.runfiles/__main__"
+else
+  BASE_DIR="${BASH_SOURCE}.runfiles"
+fi
+
+"${BASE_DIR}/iwiwi/prefilter" |
+java -jar "${BASE_DIR}/wata/wata_deploy.jar" |
+"${BASE_DIR}/iwiwi/postfilter1" |
+"${BASE_DIR}/iwiwi/postfilter2"
