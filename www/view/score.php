@@ -20,7 +20,7 @@ function Score($solution) {
 
   $resemblance = 0;
   if (strlen(preg_replace(
-          '%[^\\s]*%', '', $solution['solution_data'])) <= 5000) {
+          '%[\\s]*%', '', $solution['solution_data'])) <= 5000) {
     $response = Execute([
         'command' => 'score',
         'arg0_file' => GetBlob($problem['problem_spec_hash']),

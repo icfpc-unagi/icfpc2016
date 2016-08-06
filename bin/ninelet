@@ -1,3 +1,9 @@
 #!/bin/bash
 
-/usr/imos/bin/ninelet --ninelet_list=/alloc/github/bin/ninecluster.txt "$@"
+NINELET=/usr/imos/bin/ninelet
+
+if [ -x ~/bin/ninelet ]; then
+  NINELET=~/bin/ninelet
+fi
+
+"${NINELET}" --ninelet_list="$(dirname "${BASH_SOURCE}")/ninecluster.txt" "$@"
