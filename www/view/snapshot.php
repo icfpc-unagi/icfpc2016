@@ -28,6 +28,14 @@ echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
 <h1>Problems at <?php
 echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
 ?></h1>
+<div><?php
+$compact = !is_null(GetParameter('compact'));
+if ($compact) {
+  echo '[<a href="?">Full</a>]';
+} else {
+  echo '[<a href="?compact=1">Compact</a>]';
+}
+?></div>
 <table>
 <tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time</td></tr>
 <?php
@@ -64,6 +72,7 @@ foreach ($snapshot['problems'] as $problem) {
     }
   }
   $solution = $solutions[intval($problem['problem_id'])];
+  if ($compact && $solution['all']['solution_resemblance'] == 1) continue;
   echo '<tr>';
   echo '<td><a href="problem.php?problem_id=' . $problem['problem_id'] .
        '">' . $problem['problem_id'] . "</a></td>";
