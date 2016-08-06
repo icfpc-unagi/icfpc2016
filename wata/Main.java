@@ -7,7 +7,7 @@ import tc.wata.util.SetOpt.*;
 public class Main {
 	
 	@Option(abbr = 'a')
-	public String algo = "FoldedSolver";
+	public String algo = "FastSolver";
 	
 	@Option(abbr = 'd')
 	public boolean debug = false;

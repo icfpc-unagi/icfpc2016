@@ -96,7 +96,7 @@ public class SimpleSolver extends Solver {
 		TreeMap<P, Integer> vs = new TreeMap<P, Integer>();
 		for (int k = 0; k < s.ps.length; k++) vs.put(s.ps[k], k);
 		for (int k = 0; k < qs.length; k++) if (!vs.containsKey(qs[k])) vs.put(qs[k], vs.size());
-		TreeMap<Long, Long> es = createEdgeMap(s.poly);
+		Map<Long, Long> es = createEdgeMap(s.poly);
 		int dir = reflect ? -1 : 1;
 		for (int k = 0; k < qs.length; k++) {
 			int v1 = vs.get(qs[k]), v2 = vs.get(qs[(k + 1) % qs.length]);
@@ -170,7 +170,7 @@ public class SimpleSolver extends Solver {
 			for (int i = 0; i < used.length; i++) if (used[i] > 0) filled++;
 			score = (double)filled / used.length;
 			int numConcave = 0, numConvex = 0;
-			TreeMap<Long, Long> edges = createEdgeMap(poly);
+			Map<Long, Long> edges = createEdgeMap(poly);
 			for (int i = 0; i < poly.length; i++) {
 				for (int j = 0; j < poly[i].length; j++) {
 					if (!edges.containsKey(Utils.pair(Utils.get(poly[i], j + 1), poly[i][j]))) {

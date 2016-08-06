@@ -4,6 +4,7 @@
 source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
 DEFINE_string ai '' 'AI name.'
 DEFINE_int threads 5 'Number of threads.'
+DEFINE_int tasks 30 'Number of tasks.'
 DEFINE_int timeout 30 'Timeout'
 eval "${IMOSH_INIT}"
 
@@ -29,7 +30,8 @@ solve_problem() {
 
 for problem_id in $(
     curl --silent -F "solution_ai=${FLAGS_ai}" \
-        'http://db.sx9.jp/exec/candidates.php'); do
+        'http://db.sx9.jp/exec/candidates.php' | \
+        head -n "${FLAGS_tasks}"); do
   solve_problem "${problem_id}" &
   sub::throttle "${FLAGS_threads}"
 done

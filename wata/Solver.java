@@ -11,7 +11,7 @@ public abstract class Solver {
 	public P[] psSkeleton;
 	public int[][] polySkeleton;
 	public R[] areas;
-	public TreeMap<Long, Long> edgesSkeleton;
+	public Map<Long, Long> edgesSkeleton;
 	
 	public abstract boolean solve();
 	
@@ -40,8 +40,39 @@ public abstract class Solver {
 		return qs;
 	}
 	
-	public static TreeMap<Long, Long> createEdgeMap(int[][] poly) {
-		TreeMap<Long, Long> edges = new TreeMap<Long, Long>();
+	// 多角形iをj番目の点をaに合わせ，j+1番目の点をa->b方向に合わせ，更にreflectがtrueならば反転させた上で配置する
+	public Poly placePoly(P a, P b, int i, int j, boolean reflect) {
+		P[] qs = new P[polySkeleton[i].length];
+		for (int k = 0; k < qs.length; k++) {
+			qs[k] = psSkeleton[Utils.get(polySkeleton[i], j + k)];
+		}
+		P r = qs[0];
+		for (int k = 0; k < qs.length; k++) qs[k] = qs[k].sub(r);
+		R[][] A = P.rotate(qs[1].sub(qs[0]), b.sub(a));
+		if (A == null) return null;
+		if (reflect) {
+			R[][] B = P.reflect(b.sub(a));
+			A = R.mul(B, A);
+		}
+		qs = P.apply(A, qs);
+		for (int k = 0; k < qs.length; k++) qs[k] = qs[k].add(a);
+		if (reflect) {
+			P[] qs2 = new P[qs.length];
+			for (int k = 0; k < qs.length; k++) qs2[k] = qs[(qs.length - k) % qs.length];
+			qs = qs2;
+		}
+		Debug.check(P.area(qs).signum() > 0);
+		int[] sid = new int[qs.length];
+		if (reflect) {
+			for (int k = 0; k < qs.length; k++) sid[k] = Utils.get(polySkeleton[i], j - k);
+		} else {
+			for (int k = 0; k < qs.length; k++) sid[k] = Utils.get(polySkeleton[i], j + k);
+		}
+		return new Poly(qs, sid, i);
+	}
+	
+	public static Map<Long, Long> createEdgeMap(int[][] poly) {
+		Map<Long, Long> edges = new TreeMap<Long, Long>();
 		for (int i = 0; i < poly.length; i++) {
 			for (int j = 0; j < poly[i].length; j++) {
 				edges.put(Utils.pair(poly[i][j], Utils.get(poly[i], j + 1)), Utils.pair(i, j));

@@ -51,29 +51,43 @@ public class P implements Comparable<P> {
 		return String.format("(%s,%s)", x, y);
 	}
 	
-	public static P isLL(P p1, P p2, P q1, P q2) {
-		R d = q2.sub(q1).det(p2.sub(p1));
-		if (d.signum() == 0) return null;
-		return p1.add(p2.sub(p1).mul(q2.sub(q1).det(q1.sub(p1)).div(d)));
+	// 線分p1p2と線分q1q2が真に交差する or p1p2の間にq1かq2が乗っている or q1q2の間にp1かp2が乗っている
+	public static boolean crsSS2(P p1, P p2, P q1, P q2) {
+		try (Stat st = new Stat("crsSS2")) {
+			P v1 = q1.sub(p1), v2 = q2.sub(p1), p1q1 = v1;
+			if (v1.det(v2).signum() == 0 && v1.dot(v2).signum() < 0) return true;
+			v1 = q1.sub(p2); v2 = q2.sub(p2);
+			if (v1.det(v2).signum() == 0 && v1.dot(v2).signum() < 0) return true;
+			v1 = p1.sub(q1); v2 = p2.sub(q1);
+			if (v1.det(v2).signum() == 0 && v1.dot(v2).signum() < 0) return true;
+			v1 = p1.sub(q2); v2 = p2.sub(q2);
+			if (v1.det(v2).signum() == 0 && v1.dot(v2).signum() < 0) return true;
+			P p1p2 = p2.sub(p1), q1q2 = q2.sub(q1);
+			return p1p2.det(p1q1).signum() * p1p2.det(q2.sub(p1)).signum() < 0 &&
+					-q1q2.det(p1q1).signum() * q1q2.det(p2.sub(q1)).signum() < 0;
+		}
 	}
 	
 	public static boolean crsSS(P p1, P p2, P q1, P q2) {
-		R det = p2.sub(p1).det(q2.sub(q1));
-		if (det.signum() == 0) {
-			if (p2.sub(p1).det(q1.sub(p1)).signum() == 0) {
-				if (p1.sub(q1).dot(p2.sub(q1)).signum() < 0) return true;
-				if (p1.sub(q2).dot(p2.sub(q2)).signum() < 0) return true;
-				if (q1.sub(p1).dot(q2.sub(p1)).signum() < 0) return true;
-				if (q1.sub(p2).dot(q2.sub(p2)).signum() < 0) return true;
+		try (Stat st = new Stat("crsSS")) {
+			P p1p2 = p2.sub(p1), q1q2 = q2.sub(q1), p1q1 = q1.sub(p1);
+			R det = p1p2.det(q1q2);
+			if (det.signum() == 0) {
+				if (p1p2.det(p1q1).signum() == 0) {
+					if (p1.sub(q1).dot(p2.sub(q1)).signum() < 0) return true;
+					if (p1.sub(q2).dot(p2.sub(q2)).signum() < 0) return true;
+					if (p1q1.dot(q2.sub(p1)).signum() < 0) return true;
+					if (q1.sub(p2).dot(q2.sub(p2)).signum() < 0) return true;
+				}
+				return false;
 			}
-			return false;
+			return p1p2.det(p1q1).signum() * p1p2.det(q2.sub(p1)).signum() < 0 &&
+					-q1q2.det(p1q1).signum() * q1q2.det(p2.sub(q1)).signum() < 0;
 		}
-		return p2.sub(p1).det(q1.sub(p1)).signum() * p2.sub(p1).det(q2.sub(p1)).signum() < 0 &&
-			   q2.sub(q1).det(p1.sub(q1)).signum() * q2.sub(q1).det(p2.sub(q1)).signum() < 0;
 	}
 	
 	public static boolean crsPP(P[] ps, P[] qs) {
-		try (Stat st = new Stat("srcPP")) {
+		try (Stat st = new Stat("crsPP")) {
 		for (int i = 0; i < ps.length; i++) {
 			if (contains(qs, ps[i].add(ps[(i + 1) % ps.length]).div(R.TWO)) > 0) return true;
 			for (int j = 0; j < qs.length; j++) {
@@ -85,19 +99,22 @@ public class P implements Comparable<P> {
 	}
 	
 	public static int contains(P[] ps, P q) {
-		int n = ps.length;
-		int res = -1;
-		for (int i = 0; i < n; i++) {
-			P a = ps[i].sub(q), b = ps[(i + 1) % n].sub(q);
-			if (a.y.compareTo(b.y) > 0) {
-				P t = a; a = b; b = t;
+		try (Stat st = new Stat("contains")) {
+			int n = ps.length;
+			int res = -1;
+			for (int i = 0; i < n; i++) {
+				P a = ps[i].sub(q), b = ps[(i + 1) % n].sub(q);
+				if (a.y.compareTo(b.y) > 0) {
+					P t = a; a = b; b = t;
+				}
+				R det = a.det(b);
+				if (a.y.signum() <= 0 && b.y.signum() > 0 && det.signum() > 0) {
+					res = -res;
+				}
+				if (det.signum() == 0 && a.dot(b).signum() <= 0) return 0;
 			}
-			if (a.y.signum() <= 0 && b.y.signum() > 0 && a.det(b).signum() > 0) {
-				res = -res;
-			}
-			if (a.det(b).signum() == 0 && a.dot(b).signum() <= 0) return 0;
+			return res;
 		}
-		return res;
 	}
 	
 	// aをbの方向に回転

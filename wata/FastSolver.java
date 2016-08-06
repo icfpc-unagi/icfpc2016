@@ -8,7 +8,7 @@ import java.util.*;
 import tc.wata.debug.*;
 import tc.wata.util.*;
 
-public class FoldedSolver extends Solver {
+public class FastSolver extends Solver {
 	
 	@Override
 	public boolean solve() {
@@ -41,24 +41,21 @@ public class FoldedSolver extends Solver {
 	R lx, ux, ly, uy, AREA;
 	
 	boolean solve2() {
-		ArrayList<State> ss = new ArrayList<FoldedSolver.State>();
+		ArrayList<Poly> plist = new ArrayList<Poly>();
+		State s = new State();
 		for (int i = 0; i < polySkeleton.length; i++) {
 			for (int j = 0; j < polySkeleton[i].length; j++) {
-				State s = next(new State(), new P(lx, ly), new P(ux, ly), i, j, false);
-				if (s != null) {
-					ss.add(s);
-				}
+				Poly p = placePoly(new P(lx, ly), new P(ux, ly), i, j, false);
+				if (p != null && canPlace(s, p)) plist.add(p);
 				R d = psSkeleton[Utils.get(polySkeleton[i], j + 1)].sub(psSkeleton[polySkeleton[i][j]]).abs2().sqrt();
 				if (d != null) {
-					s = next(new State(), new P(d, R.ZERO), new P(lx, ly), i, j, true);
-					if (s != null) {
-						ss.add(s);
-					}
+					p = placePoly(new P(d, R.ZERO), new P(lx, ly), i, j, true);
+					if (p != null && canPlace(s, p)) plist.add(p);
 				}
 			}
 		}
-		Collections.shuffle(ss, rand);
-		for (State s : ss) if (rec(s)) return true;
+		Collections.shuffle(plist, rand);
+		for (Poly p : plist) if (rec(place(s, p))) return true;
 		return false;
 	}
 	
@@ -66,187 +63,178 @@ public class FoldedSolver extends Solver {
 	
 	public boolean rec(State s) {
 		if (debug) {
-			R used = s.usedArea();
-			if (maxArea.compareTo(used) < 0) {
-				maxArea = used;
+//			R used = s.usedArea();
+//			if (maxArea.compareTo(used) < 0) {
+//				maxArea = used;
 				s.vis();
-			}
+//			}
 		}
-//		if (debug && s.usedArea().compareTo(new R(BigInteger.valueOf(9),BigInteger.valueOf(10))) > 0) s.vis();
 		if (s.usedArea().compareTo(AREA) == 0) {
+			Debug.check(s.remainingArea().signum() == 0);
 			s = s.unfold();
 			System.out.print(s);
 //			s.vis();
 			return true;
 		}
-		Map<Long, Long> edges = createEdgeMap(s.poly);
-		double maxScore = -1;
-		State t1 = null, t2 = null;
-		for (int i = 0; i < s.poly.length; i++) {
-			for (int j = 0; j < s.poly[i].length; j++) {
-				int p1 = s.poly[i][j], p2 = Utils.get(s.poly[i], j + 1);
-				Long e = edges.get(Utils.pair(p2, p1));
-				if (e == null) {
-					if (s.ps[p1].y.compareTo(ly) == 0 && s.ps[p2].y.compareTo(ly) == 0) continue;
-					if (s.ps[p1].x.compareTo(ux) == 0 && s.ps[p2].x.compareTo(ux) == 0) continue;
-					if (s.ps[p1].y.compareTo(uy) == 0 && s.ps[p2].y.compareTo(uy) == 0) continue;
-					if (s.ps[p1].x.compareTo(lx) == 0 && s.ps[p2].x.compareTo(lx) == 0) continue;
-					int v1 = s.cor[p1], v2 = s.cor[p2];
-					Long f1 = edgesSkeleton.get(Utils.pair(v2, v1)), f2 = edgesSkeleton.get(Utils.pair(v1, v2));
-//						Debug.print(i, j, v1, v2);
-					State s1 = null, s2 = null;
-					if (f1 != null) {
-						s1 = next(s, s.ps[p2], s.ps[p1], (int)(f1 >> 32), f1.intValue(), false);
-//							Debug.print("f1", (int)(f1 >> 32), f1.intValue(), s1 != null);
-					}
-					if (f2 != null) {
-						s2 = next(s, s.ps[p1], s.ps[p2], (int)(f2 >> 32), f2.intValue(), true);
-//							Debug.print("f2", (int)(f2 >> 32), f2.intValue(), s2 != null);
-					}
-					if (s1 == null && s2 == null) return false;
-					if (s1 == null) return rec(s2);
-					if (s2 == null) return rec(s1);
-					if (maxScore < Math.max(s1.score(), s2.score())) {
-						maxScore = Math.max(s1.score(), s2.score());
-						t1 = s1;
-						t2 = s2;
+		for (Border b : s.border) {
+			for (int i = 0; i < 2; i++) {
+				if (b.poly[i] != null && b.poly[i].bb.crs(s.last)) {
+					if (!canPlace(s, b.poly[i])) {
+						b.poly[i] = null;
 					}
 				}
 			}
+			if (b.poly[0] == null && b.poly[1] == null) return false;
 		}
-		if (t1 == null) return false;
-		if (t1.score() > t2.score()) return rec(t1) || rec(t2);
-		return rec(t2) || rec(t1);
+		for (Border b : s.border) {
+			for (int i = 0; i < 2; i++) {
+				if (b.poly[1 - i] == null) {
+					return rec(place(s, b.poly[i]));
+				}
+			}
+		}
+		double maxScore = -1;
+		Poly p1 = null, p2 = null;
+		for (Border b : s.border) {
+//			Debug.check(canPlace(s, b.poly[0]));
+//			Debug.check(canPlace(s, b.poly[1]));
+			double score = score(s, b.poly[0]);
+			if (maxScore < score) {
+				maxScore = score;
+				p1 = b.poly[0];
+				p2 = b.poly[1];
+			}
+			score = score(s, b.poly[1]);
+			if (maxScore < score) {
+				maxScore = score;
+				p1 = b.poly[1];
+				p2 = b.poly[0];
+			}
+		}
+		if (canPlace(s, p1) && rec(place(s, p1))) return true;
+		return canPlace(s, p2) && rec(place(s, p2));
 	}
 	
-	State next(State s, P a, P b, int i, int j, boolean reflect) {
-		P[] qs = place(a, b, i, j, reflect);
-		if (qs == null) return null;
-		for (int k = 0; k < qs.length; k++) {
-			if (qs[k].x.compareTo(lx) < 0 || qs[k].x.compareTo(ux) > 0) return null;
-			if (qs[k].y.compareTo(ly) < 0 || qs[k].y.compareTo(uy) > 0) return null;
+	boolean canPlace(State s, Poly poly) {
+		for (P p : poly.ps) {
+			if (p.x.compareTo(lx) < 0 || p.x.compareTo(ux) > 0) return false;
+			if (p.y.compareTo(ly) < 0 || p.y.compareTo(uy) > 0) return false;
 		}
-		BB bb = new BB();
-		for (int k = 0; k < qs.length; k++) bb.update(qs[k].x.getDouble(), qs[k].y.getDouble());
-		for (int k = 0; k < s.poly.length; k++) if (bb.crs(s.bb[k])) {
-			if (P.crsPP(s.getPoly(k), qs)) return null;
+		for (int i = 0; i < poly.ps.length; i++) {
+			Integer v = s.pid.get(poly.ps[i]);
+			if (v != null && s.cor[v] != poly.sid[i]) return false;
 		}
-		TreeMap<P, Integer> vs = new TreeMap<P, Integer>();
-		for (int k = 0; k < s.ps.length; k++) vs.put(s.ps[k], k);
-		for (int k = 0; k < qs.length; k++) if (!vs.containsKey(qs[k])) vs.put(qs[k], vs.size());
-		Map<Long, Long> es = createEdgeMap(s.poly);
-		int dir = reflect ? -1 : 1;
-		for (int k = 0; k < qs.length; k++) {
-			int v1 = vs.get(qs[k]), v2 = vs.get(qs[(k + 1) % qs.length]);
-			Long e = es.get(Utils.pair(v2, v1));
-			if (e != null) {
-				int i1 = (int)(e >> 32), j1 = e.intValue(), p2 = s.poly[i1][j1], p1 = Utils.get(s.poly[i1], j1 + 1);
-				if (s.cor[p1] != Utils.get(polySkeleton[i], j + k * dir)) return null;
-				if (s.cor[p2] != Utils.get(polySkeleton[i], j + (k + 1) * dir)) return null;
+		for (Border b : s.border) if (b.bb.crs(poly.bb)) {
+			for (int i = 0; i < poly.ps.length; i++) {
+				P p1 = poly.ps[i], p2 = poly.ps[(i + 1) % poly.ps.length];
+				if (P.crsSS2(b.p1, b.p2, p1, p2)) return false;
 			}
-			int v = Utils.get(polySkeleton[i], j + k * dir);
-			int h = vs.get(qs[k]);
-			if (h < s.cor.length && s.cor[h] != v) return null;
 		}
+		R remain = s.remainingArea();
+		if (s.used[poly.pid] == 0) remain = remain.sub(areas[poly.pid]);
+		if (AREA.sub(s.usedArea().add(areas[poly.pid])).compareTo(remain) < 0) return false;
+		return true;
+	}
+	
+	State place(State s, Poly poly) {
 		State t = new State(s);
-		t.used[i]++;
-		t.ps = new P[vs.size()];
-		for (Map.Entry<P, Integer> e : vs.entrySet()) t.ps[e.getValue()] = e.getKey();
-		t.poly[t.poly.length - 1] = new int[polySkeleton[i].length];
-		for (int k = 0; k < t.poly[t.poly.length - 1].length; k++) {
-			t.poly[t.poly.length - 1][k] = vs.get(qs[k]);
-			P p = t.ps[t.poly[t.poly.length - 1][k]];
-			t.bb[t.poly.length - 1].update(p.x.getDouble(), p.y.getDouble());
-		}
+		t.used[poly.pid]++;
+		t.ps = copyOf(s.ps, s.ps.length + poly.ps.length);
+		int pn = s.ps.length;
+		for (P p : poly.ps) if (!s.pid.containsKey(p)) t.ps[pn++] = p;
+		t.ps = copyOf(t.ps, pn);
+		t.setPid();
+		t.poly[t.poly.length - 1] = new int[poly.ps.length];
 		t.cor = copyOf(s.cor, t.ps.length);
-		for (int k = s.cor.length; k < t.cor.length; k++) t.cor[k] = -1;
-		for (int k = 0; k < qs.length; k++) {
-			int v = Utils.get(polySkeleton[i], j + k * dir);
-			int h = vs.get(qs[k]);
-			if (t.cor[h] >= 0 && t.cor[h] != v) return null;
-			t.cor[h] = v;
+		for (int i = s.cor.length; i < t.cor.length; i++) t.cor[i] = -1;
+		t.last = new BB();
+		for (int i = 0; i < poly.ps.length; i++) {
+			int id = t.pid.get(poly.ps[i]);
+			t.poly[t.poly.length - 1][i] = id;
+			if (t.cor[id] >= 0) Debug.check(t.cor[id] == poly.sid[i]);
+			t.cor[id] = poly.sid[i];
+			t.last.update(poly.ps[i].x.getDouble(), poly.ps[i].y.getDouble());
 		}
-		if (AREA.sub(t.usedArea()).compareTo(t.remainingArea()) < 0) return null;
-//		for (int k = 0; k < t.used.length; k++) if (t.used[k] > 0) {
-//			for (int x = 0; x < polySkeleton[k].length; x++) {
-//				boolean ok = false;
-//				for (int y = 0; y < t.ps.length; y++) if (t.cor[y] == polySkeleton[k][x]) {
-//					ok = true;
-//				}
-//				if (!ok) {
-//					Debug.print(k);
-//					Debug.print(s.used);
-//					Debug.print(t.used);
-//				}
-//				Debug.check(ok);
-//			}
-//		}
+		Set<Long> set = new TreeSet<Long>();
+		for (int i = 0; i < poly.ps.length; i++) {
+			int p1 = t.poly[t.poly.length - 1][i], p2 = Utils.get(t.poly[t.poly.length - 1], i + 1);
+			set.add(Utils.pair(p1, p2));
+		}
+		ArrayList<Border> bs = new ArrayList<Border>();
+		for (Border b : s.border) {
+			if (!set.remove(Utils.pair(s.pid.get(b.p2), s.pid.get(b.p1)))) {
+				bs.add(new Border(b));
+			}
+		}
+		for (int i = 0; i < poly.ps.length; i++) {
+			int p1 = t.poly[t.poly.length - 1][i], p2 = Utils.get(t.poly[t.poly.length - 1], i + 1);
+			if (set.contains(Utils.pair(p1, p2))) {
+				if (t.ps[p1].x.compareTo(lx) == 0 && t.ps[p2].x.compareTo(lx) == 0) continue;
+				if (t.ps[p1].y.compareTo(ly) == 0 && t.ps[p2].y.compareTo(ly) == 0) continue;
+				if (t.ps[p1].x.compareTo(ux) == 0 && t.ps[p2].x.compareTo(ux) == 0) continue;
+				if (t.ps[p1].y.compareTo(uy) == 0 && t.ps[p2].y.compareTo(uy) == 0) continue;
+				Border b = new Border(t.ps[p1], t.ps[p2]);
+				Long e1 = edgesSkeleton.get(Utils.pair(t.cor[p2], t.cor[p1]));
+				Long e2 = edgesSkeleton.get(Utils.pair(t.cor[p1], t.cor[p2]));
+				if (e1 != null) {
+					b.poly[0] = placePoly(t.ps[p2], t.ps[p1], (int)(e1 >> 32), e1.intValue(), false);
+				}
+				if (e2 != null) {
+					b.poly[1] = placePoly(t.ps[p1], t.ps[p2], (int)(e2 >> 32), e2.intValue(), true);
+				}
+				bs.add(b);
+			}
+		}
+		t.border = bs.toArray(new Border[0]);
 		return t;
+	}
+	
+	double score(State s, Poly poly) {
+		if (s.used[poly.pid] == 0) return 1;
+		return 0;
 	}
 	
 	class State {
 		int[] used;
 		P[] ps;
-		int[][] poly;
-		BB[] bb;
 		int[] cor;
-		double score = -1;
+		int[][] poly;
+		Border[] border;
+		BB last;
+		Map<P, Integer> pid;
+		R usedArea, remainingArea;
 		State() {
 			used = new int[polySkeleton.length];
 			ps = new P[0];
-			poly = new int[0][];
-			bb = new BB[0];
 			cor = new int[0];
+			poly = new int[0][];
+			border = new Border[0];
+			pid = new TreeMap<P, Integer>();
 		}
 		State(State s) {
 			used = s.used.clone();
 			poly = copyOf(s.poly, s.poly.length + 1);
-			bb = copyOf(s.bb, s.bb.length + 1);
-			bb[s.bb.length] = new BB();
 		}
 		R usedArea() {
+			if (usedArea != null) return usedArea;
 			R a = R.ZERO;
 			for (int i = 0; i < used.length; i++) if (used[i] > 0) {
 				a = a.add(areas[i].mul(new R(used[i])));
 			}
-			return a;
+			return usedArea = a;
 		}
 		R remainingArea() {
+			if (remainingArea != null) return remainingArea;
 			R a = R.ZERO;
 			for (int i = 0; i < used.length; i++) if (used[i] == 0) {
 				a = a.add(areas[i]);
 			}
-			return a;
+			return remainingArea = a;
 		}
-		P[] getPoly(int i) {
-			P[] qs = new P[poly[i].length];
-			for (int j = 0; j < qs.length; j++) qs[j] = ps[poly[i][j]];
-			return qs;
-		}
-		double score() {
-			if (score >= 0) return score;
-			int filled = 0;
-			for (int i = 0; i < used.length; i++) if (used[i] > 0) filled++;
-			score = (double)filled / used.length;
-			int numConcave = 0, numConvex = 0;
-			Map<Long, Long> edges = createEdgeMap(poly);
-			for (int i = 0; i < poly.length; i++) {
-				for (int j = 0; j < poly[i].length; j++) {
-					if (!edges.containsKey(Utils.pair(Utils.get(poly[i], j + 1), poly[i][j]))) {
-						int i2 = i, j2 = j;
-						while (edges.containsKey(Utils.pair(poly[i2][j2], Utils.get(poly[i2], j2 - 1)))) {
-							long e = edges.get(Utils.pair(poly[i2][j2], Utils.get(poly[i2], j2 - 1)));
-							i2 = (int)(e >> 32);
-							j2 = (int)e;
-						}
-						R det = ps[Utils.get(poly[i], j + 1)].sub(ps[poly[i][j]]).det(ps[Utils.get(poly[i2], j2 - 1)].sub(ps[poly[i][j]]));
-						if (det.signum() < 0) numConcave++;
-						else if (det.signum() > 0) numConvex++;
-					}
-				}
-			}
-			score = score * 10000 + 1.0 / (numConcave + 1);
-			return score;
+		void setPid() {
+			if (pid != null) return;
+			pid = new TreeMap<P, Integer>();
+			for (int i = 0; i < ps.length; i++) pid.put(ps[i], i);
 		}
 		@Override
 		public String toString() {
@@ -355,6 +343,8 @@ public class FoldedSolver extends Solver {
 				vis.g.setColor(Color.red);
 				vis.g.draw(path);
 			}
+			vis.g.setColor(Color.GREEN);
+			for (Border b : border) vis.g.draw(vis.segment(b.p1.x.getDouble(), b.p1.y.getDouble(), b.p2.x.getDouble(), b.p2.y.getDouble()));
 			vis.vis(true);
 			vis.dispose();
 		}

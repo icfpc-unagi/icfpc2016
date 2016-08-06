@@ -13,3 +13,8 @@ deploy(
     name = "chokudai",
     binary = "//ai/chokudai:chokudai.ar",
 )
+
+deploy(
+    name = "wata",
+    binary = "//ai/wata:wata.ar",
+)
