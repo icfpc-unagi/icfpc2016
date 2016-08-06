@@ -5,6 +5,7 @@ require_once(dirname(__FILE__) . '/../library/api.php');
 function Run() {
   $output = '';
   $output .= trim(file_get_contents('http://db.sx9.jp/view/submit.php')) . "\n";
+  $output .= trim(file_get_contents('http://db.sx9.jp/view/submit_problem.php')) . "\n";
   return $output;
 }
 
