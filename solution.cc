@@ -27,6 +27,45 @@ int main(int argc, char** argv) {
   Solution solution;
   ReadSolution(ifs, &solution);
 
+  // Find perimeter path
+  map<pair<Q, Q>, int> src_perimeter_map;
+  for (const auto& facet : solution.facets) {
+    for (int i = 0; i < facet.size(); ++i) {
+      int j = (i + 1) % facet.size();
+      pair<Q, Q> a = {solution.src_verts[facet[i]].x,
+                      solution.src_verts[facet[i]].y},
+                 b = {solution.src_verts[facet[j]].x,
+                      solution.src_verts[facet[j]].y};
+      if ((a.first == 0 && b.first == 0) || (a.second == 1 && b.second == 1)) {
+        if (a < b) {
+          src_perimeter_map.emplace(a, facet[j]);
+        } else {
+          src_perimeter_map.emplace(b, facet[i]);
+        }
+      } else if ((a.first == 1 && b.first == 1) ||
+                 (a.second == 0 && b.second == 0)) {
+        if (a < b) {
+          src_perimeter_map.emplace(b, facet[i]);
+        } else {
+          src_perimeter_map.emplace(a, facet[j]);
+        }
+      }
+    }
+  }
+  vector<int> perimeter_path;
+  pair<Q, Q> p(0, 0);
+  do {
+    auto it = src_perimeter_map.find(p);
+    if (it == src_perimeter_map.end()) {
+      LOG(WARNING) << "Failed to find perimeter path.";
+      perimeter_path.clear();
+      break;
+    }
+    perimeter_path.push_back(it->second);
+    p.first = solution.src_verts[it->second].x;
+    p.second = solution.src_verts[it->second].y;
+  } while (p.first != 0 || p.second != 0);
+
   // viewbox size
   Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
   if (FLAGS_shrink_viewbox) {
@@ -60,16 +99,17 @@ int main(int argc, char** argv) {
       min_y = 0;
     }
   }
+
   printf(
-      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round">)",
+      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round" fill="none">)",
       min_x.convert_to<double>() - 0.005, -max_y.convert_to<double>() - 0.005,
       (max_x - min_x).convert_to<double>() + 0.01,
       (max_y - min_y).convert_to<double>() + 0.01);
   printf(
-      R"q(<style>.f :hover{fill:orange}</style><g transform="scale(1,-1)">)q");
+      R"q(<style>polygon:hover{fill:orange}</style><g transform="scale(1,-1)">)q");
   if (!FLAGS_shrink_viewbox) {
     printf(
-        R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
+        R"(<rect x="0" y="0" width="1" height="1" stroke="skyblue" stroke-width="0.005"/>)");
   }
   vector<string> points;
   for (const auto& facet : solution.facets) {
@@ -81,21 +121,30 @@ int main(int argc, char** argv) {
     }
     points.push_back(strings::Join(strs, " "));
   }
-  printf(R"(<g fill="silver" class="f">)");
+  printf(R"(<g fill="silver">)");
   for (int i = 0; i < points.size(); ++i) {
     printf(
         R"(<polygon id="i%d" pointer-events="painted" points="%s"/>)", i,
         points[i].c_str());
   }
-  printf(R"(</g><g fill="none" stroke="gray" stroke-width="0.005">)");
+  printf(R"(</g><g stroke="gray" stroke-width="0.005">)");
   for (int i = 0; i < points.size(); ++i) {
     printf(
         R"(<polygon points="%s"/>)", points[i].c_str());
   }
   printf("</g>");
+  if (perimeter_path.size() > 0) {
+    printf(R"(<path stroke="blue" stroke-width="0.005" d=")");
+    for (int i = 0; i < perimeter_path.size(); ++i) {
+      printf("%c%.3f %.3f", i == 0 ? 'M' : 'L',
+             solution.dst_verts[perimeter_path[i]].x.convert_to<double>(),
+             solution.dst_verts[perimeter_path[i]].y.convert_to<double>());
+    }
+    printf(R"(Z"/>)");
+  }
   for (int i = 0; i < solution.dst_verts.size(); ++i) {
     printf(
-        R"(<circle cx="%.3f" cy="%.3f" r="0.008"/>)",
+        R"(<circle fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)",
         solution.dst_verts[i].x.convert_to<double>(),
         solution.dst_verts[i].y.convert_to<double>());
   }
