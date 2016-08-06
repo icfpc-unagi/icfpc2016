@@ -9,3 +9,7 @@ install-score: score
 score:
 	bazel build -c opt //iwiwi:score
 .PHONY: score
+
+chokudai:
+	bazel build -c opt :chokudai
+.PHONY: chokudai

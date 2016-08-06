@@ -8,3 +8,8 @@ deploy(
     name = "score",
     binary = "//iwiwi:score",
 )
+
+deploy(
+    name = "chokudai",
+    binary = "//ai/chokudai:chokudai.ar",
+)
