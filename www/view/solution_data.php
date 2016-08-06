@@ -89,11 +89,33 @@ function DrawProblem($data) {
 }
 
 if (!is_null($problem)) {
-  DrawProblem(GetBlob($problem['problem_spec_hash']));
+  $problem['data'] = GetBlob($problem['problem_spec_hash']);
+  DrawProblem($problem['data']);
 }
 
 ?>
-</td></tr></table>
+</td><td>
+<?php
+
+function DrawValidation($problem, $solution) {
+  $result = Execute([
+      'command' => 'validate',
+      'alsologtostderr' => 1,
+      'show_figure' => 1,
+      'problem_file' => $problem,
+      'solution_file' => $solution]);
+  echo $result['stdout'];
+  if (strlen($result['stderr']) > 0) {
+    echo "<h2>Standard Error</h2>\n";
+    echo "<pre>" . htmlspecialchars(trim($result['stderr'])) . "</pre>\n";
+  }
+}
+
+if (!is_null($problem)) {
+  DrawValidation($problem['data'], $data);
+}
+
+?></td></tr></table>
 <h1>Data</h1>
 <textarea style="width:100%;height:300px;font-size:100%;font-family:monospace"><?php echo htmlspecialchars($data); ?></textarea>
 </body>
