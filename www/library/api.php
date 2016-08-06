@@ -169,6 +169,19 @@ function SubmitSolution($problem_id, $data) {
   return $data;
 }
 
+function SubmitProblem($publish_time, $data) {
+  $data = CallApi('/problem/submit',
+                  ['publish_time' => $publish_time, 'solution_spec' => $data]);
+  if (is_null($data)) {
+    return NULL;
+  }
+  $data = json_decode($data, TURE);
+  if (!isset($data['ok'])) {
+    return NULL;
+  }
+  return $data;
+}
+
 function FormatData($data) {
   $data = preg_replace('%\\s*[\\r\\n]+\\s*%', "\n", trim($data));
   return $data . "\n";
