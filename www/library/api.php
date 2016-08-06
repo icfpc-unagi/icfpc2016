@@ -29,8 +29,8 @@ function Execute($params) {
 function GetParameter($name) {
   if (isset($_REQUEST[$name])) {
     return $_REQUEST[$name];
-  } else if (isset($_FILE[$name])) {
-    return file_get_contents($_FILE[$name]['tmp_name']);
+  } else if (isset($_FILES[$name])) {
+    return file_get_contents($_FILES[$name]['tmp_name']);
   } else if (isset($_ENV[$name])) {
     return $_ENV[$name];
   } else if (isset($_ENV[$name . '_file'])) {
