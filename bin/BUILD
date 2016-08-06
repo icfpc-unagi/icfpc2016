@@ -7,6 +7,7 @@ filegroup(
     srcs = [
         "imosh",
         "imosh_test_generate.sh",
+        "imos-package",
     ],
 )
 
