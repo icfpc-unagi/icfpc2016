@@ -28,7 +28,6 @@ void Input() {
 }
 
 
-
 int main() {
   Input();
 
@@ -59,18 +58,31 @@ int main() {
     }
   }
 
-  int new_num_points = 0;
-  for (auto &x : old_to_new) {
-    if (x != -1) x = new_num_points++;
+  // Relabeling
+  vector<int> new_to_old;
+  rep (v, num_points) {
+    if (old_to_new[v] != -1) {
+      new_to_old.emplace_back(v);
+    }
   }
-  cerr << "Number of points: " << num_points << " -> " << new_num_points << endl;
+  map<int, int> cnt;
+  for (const auto &f : facets) for (int v : f) cnt[v] += 1;
+  sort(all(new_to_old), [&](int v, int w) {
+      return cnt.at(v) > cnt.at(w);
+    });
+
+  rep (i, new_to_old.size()) {
+    old_to_new[new_to_old[i]] = i;
+  }
+  int new_num_points = new_to_old.size();
+  cerr << "Number of points: " << num_points << " -> "
+       << new_num_points << endl;
 
   // Output
   cout << new_num_points << endl;
-  rep (i, num_points) {
-    if (old_to_new[i] != -1) {
-      cout << src[i].x() << "," << src[i].y() << endl;
-    }
+  rep (k, new_num_points) {
+    int i = new_to_old[k];
+    cout << src[i].x() << "," << src[i].y() << endl;
   }
   cout << facets.size() << endl;
   rep (i, facets.size()) {
@@ -83,9 +95,8 @@ int main() {
     for (int v : new_facet) cout << " " << v;
     cout << endl;
   }
-  rep (i, num_points) {
-    if (old_to_new[i] != -1) {
-      cout << dst[i].x() << "," << dst[i].y() << endl;
-    }
+  rep (k, new_num_points) {
+    int i = new_to_old[k];
+    cout << dst[i].x() << "," << dst[i].y() << endl;
   }
 }
