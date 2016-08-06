@@ -1,0 +1,9 @@
+#!/bin/bash
+# submit_solution submits a solution in ICFPC 2016.
+
+result="$(curl --silent -F "problem_id=$1" 'http://db.sx9.jp/exec/score.php')"
+if [ "${result}" = '1' ]; then
+  exit 0
+else
+  exit 1
+fi
