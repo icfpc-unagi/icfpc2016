@@ -88,8 +88,8 @@ foreach ($snapshot['problems'] as $problem) {
   } else if (is_null($solution['all']['solution_resemblance'])) {
     echo '??????';
   } else {
-    echo '<span style="color:#888">(' . $solution['solution_resemblance'] .
-         ')</span>';
+    echo '<span style="color:#888">(' .
+         $solution['all']['solution_resemblance'] . ')</span>';
   }
   echo '</a></td>';
   echo '<td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</td>";
