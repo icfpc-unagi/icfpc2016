@@ -27,9 +27,16 @@ DEFINE_string(solution, "", "input solution file");
 namespace bg = boost::geometry;
 
 using gPoint = bg::model::d2::point_xy<Q>;
+using ccwRing = bg::model::ring<gPoint, false, false>;
 using ccwPolygon = bg::model::polygon<gPoint, false, false>;
 using ccwMultiPolygon = bg::model::multi_polygon<ccwPolygon>;
 using namespace std;
+
+gPoint rotCCW(const gPoint& p) { return gPoint(-p.y(), p.x()); }
+
+Q cross(const gPoint& lhs, const gPoint& rhs) {
+  return lhs.x() * rhs.y() - lhs.y() * rhs.x();
+}
 
 // namespace boost {
 // namespace multiprecision {
@@ -89,46 +96,92 @@ int main(int argc, char** argv) {
     }
   }
 
-  // TODO: Verify src facets congruence vs dst
+  // Verify src facets congruence vs dst
+  vector<ccwRing> dst_rings;
+  for (const auto& facet : solution.facets) {
+    LOG_IF(FATAL, facet.size() < 3) << "Facet has less than 3 vertices ("
+                                    << strings::JoinInts(facet, ",") << ")";
+    ccwRing src_ring, dst_ring;
+    for (const auto& i : facet) {
+      bg::append(src_ring,
+                 gPoint(solution.src_verts[i].x, solution.src_verts[i].y));
+      bg::append(dst_ring,
+                 gPoint(solution.dst_verts[i].x, solution.dst_verts[i].y));
+    }
+    bool mirror;
+    bool error = false;
+    for (int i = 1; i < src_ring.size() - 1; ++i) {
+      gPoint s1 = src_ring[i];
+      gPoint s2 = src_ring[i + 1];
+      bg::subtract_point(s1, src_ring[0]);
+      bg::subtract_point(s2, src_ring[0]);
+      Q gs1 = bg::dot_product(s1, s2);
+      Q gs2 = bg::dot_product(rotCCW(s1), s2);
+      gPoint d1 = dst_ring[i];
+      gPoint d2 = dst_ring[i + 1];
+      bg::subtract_point(d1, dst_ring[0]);
+      bg::subtract_point(d2, dst_ring[0]);
+      Q gd1 = bg::dot_product(d1, d2);
+      Q gd2 = bg::dot_product(rotCCW(d1), d2);
+      // find if flipped or not with the first angle
+      if (i == 1) mirror = gs2.sign() != gd2.sign();
+      bool congruent = gs1 == gd1 && gs2 == (mirror ? -gd2 : gd2);
+      LOG_IF(FATAL, !congruent)
+          << "Facet is not congruent between source and destination: "
+          << bg::wkt(src_ring) << " vs " << bg::wkt(dst_ring);
+    }
+
+    bg::correct(dst_ring);
+    dst_rings.push_back(std::move(dst_ring));
+  }
 
   // Verify dst facets shape problem silhouette
   ccwMultiPolygon dst_mpoly;
-  for (const auto& facet : solution.facets) {
-    ccwPolygon poly;
-    for (const auto& i : facet) {
-      bg::append(poly,
-                 gPoint(solution.dst_verts[i].x, solution.dst_verts[i].y));
-    }
-    if (bg::area(poly) < 0) {
-      bg::reverse(poly);
-    }
+  for (const auto& ring : dst_rings) {
     ccwMultiPolygon tmp;
-    bg::union_(dst_mpoly, poly, tmp);
+    bg::union_(dst_mpoly, ring, tmp);
     dst_mpoly.swap(tmp);
   }
   ccwPolygon silhouette;
   for (const auto& poly : problem.polygons) {
-    ccwPolygon gpoly;
+    ccwRing ring;
     for (const auto& v : poly) {
-      bg::append(gpoly, gPoint(v.x, v.y));
+      bg::append(ring, gPoint(v.x, v.y));
     }
-    vector<ccwPolygon> out;
-    bg::union_(silhouette, gpoly, out);
-    LOG_IF(FATAL, out.size() == 0) << "Unexpected error on silhouette.";
-    LOG_IF(ERROR, out.size() > 1) << "Problem has disjoint polygons.";
-    silhouette = out[0];
+    ccwMultiPolygon out;
+    if (bg::area(ring) > 0) {
+      bg::union_(silhouette, ring, out);
+    } else {
+      bg::correct(ring);
+      bg::difference(silhouette, ring, out);
+    }
+    if (out.size() == 0) {
+      LOG(ERROR) << "Found holes before positive silhouette.";
+    } else {
+      LOG_IF(ERROR, out.size() > 1)
+          << "Problem silhouette has disjoint polygons: " << bg::wkt(out);
+      silhouette = out[0];
+    }
   }
+  LOG_IF(ERROR, !bg::is_valid(silhouette)) << "Problem silhouette is invalid."
+                                           << bg::wkt(silhouette);
+  auto silhouette_area = bg::area(silhouette);
+  LOG_IF(ERROR, silhouette_area < 0 || 1 < silhouette_area)
+      << "Silhouette doesn't have area between [0,1]: " << silhouette_area;
   ccwMultiPolygon diff;
   bg::sym_difference(silhouette, dst_mpoly, diff);
-  if (bg::num_geometries(diff) != 0) {
-    LOG(INFO) << "Destionation silhouette matches to the problem.";
-  } else {
-    LOG(WARNING) << "Destionation silhouette doesn't match to the problem.";
+  if (!bg::area(diff).is_zero()) {
+    LOG(WARNING) << "Destionation silhouette doesn't match.";
+    ccwMultiPolygon diff1, diff2;
+    bg::difference(silhouette, dst_mpoly, diff1);
+    bg::difference(dst_mpoly, silhouette, diff2);
+    LOG(WARNING) << "Diff1: " << bg::wkt(diff1);
+    LOG(WARNING) << "Diff2: " << bg::wkt(diff2);
   }
 
   // TODO: Calculate score?
 
-  VLOG(2) << "Exiting successfully";
+  LOG(INFO) << "Validated";
 
   return 0;
 }

@@ -22,6 +22,7 @@ namespace bg = boost::geometry;
 
 using boost::rational;
 using gPoint = bg::model::d2::point_xy<Q>;
+using ccwRing = bg::model::ring<gPoint, false, false>;
 using ccwPolygon = bg::model::polygon<gPoint, false, false>;
 using ccwMultiPolygon = bg::model::multi_polygon<ccwPolygon>;
 using LineString = bg::model::linestring<gPoint>;
@@ -62,16 +63,14 @@ int main(int argc, char** argv) {
   ccwMultiPolygon mpoly, mpoly_tmp;
   MultiLineString mls, mls_tmp;
   for (const auto& facet : solution.facets) {
-    ccwPolygon poly;
+    ccwRing ring;
     for (const auto& i : facet) {
-      bg::append(poly,
+      bg::append(ring,
                  gPoint(solution.dst_verts[i].x, solution.dst_verts[i].y));
     }
-    if (bg::area(poly) < 0) {
-      bg::reverse(poly);
-    }
-    LOG(INFO) << "union polygon: " << bg::wkt(poly);
-    bg::union_(mpoly, poly, mpoly_tmp);
+    bg::correct(ring);
+    LOG(INFO) << "union ring: " << bg::wkt(ring);
+    bg::union_(mpoly, ring, mpoly_tmp);
     mpoly.swap(mpoly_tmp);
     bg::clear(mpoly_tmp);
     LOG(INFO) << "polygon: " << bg::wkt(mpoly);
