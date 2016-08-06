@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
       Q(max_y - min_y).convert_to<double>() + 0.005);
   if (!FLAGS_shrink_viewbox) {
     printf(
-        R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
+        R"q(<g transform="translate(0,1) scale(1,-1)"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)q");
   }
   printf(
       R"(<path fill="silver" stroke="gray" stroke-width="0.005" fill-rule="nonzero" d=")");
