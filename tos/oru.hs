@@ -107,10 +107,12 @@ parseV str = let
     Cpx (parseQ xstr) (parseQ ystr)
 
 parseQ :: S -> Q
-parseQ str = let
+parseQ str
+ | '/' `elem`str = let
   (nstr,(_:dstr)) = break (== '/') str
   in
     read nstr % read dstr
+ | otherwise = read str % 1
 
 -- Polygon (list of Vertex IDs)
 parseP :: S -> [Z]
