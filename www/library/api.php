@@ -94,7 +94,7 @@ function CallApi($path, $params = NULL) {
     if ($status != 429) break;
     sleep(pow(2, $i));
   }
-  if ($status != 200 && $status != 400) {
+  if ($status != 200 && $status != 400 && $status != 403) {
     return NULL;
   }
   return $output;
