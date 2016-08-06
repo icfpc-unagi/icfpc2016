@@ -62,13 +62,13 @@ int main(int argc, char** argv) {
     min_x = min_y = 0;
   }
   printf(
-      R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round">)",
-      min_x.convert_to<double>() - 0.0025, min_y.convert_to<double>() - 0.0025,
-      Q(max_x - min_x).convert_to<double>() + 0.005,
-      Q(max_y - min_y).convert_to<double>() + 0.005);
+      R"q(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round"><g transform="scale(1,-1)">)q",
+      min_x.convert_to<double>() - 0.005, -max_y.convert_to<double>() - 0.005,
+      (max_x - min_x).convert_to<double>() + 0.01,
+      (max_y - min_y).convert_to<double>() + 0.01);
   if (!FLAGS_shrink_viewbox) {
     printf(
-        R"q(<g transform="translate(0,1) scale(1,-1)"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)q");
+        R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
   }
   printf(
       R"(<path fill="silver" stroke="gray" stroke-width="0.005" fill-rule="nonzero" d=")");

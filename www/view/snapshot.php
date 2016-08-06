@@ -38,8 +38,19 @@ foreach (Database::Select('
         `problem_id`,
         COUNT(*) AS `solution_count`,
         MAX(`solution_resemblance`) AS `solution_resemblance`
-    FROM `solution` GROUP BY `problem_id`') as $problem) {
-  $solutions[$problem['problem_id']] = $problem;
+    FROM `solution`
+    WHERE `solution_submission` IS NOT NULL
+    GROUP BY `problem_id`') as $problem) {
+  $solutions[$problem['problem_id']]['submitted'] = $problem;
+}
+foreach (Database::Select('
+    SELECT
+        `problem_id`,
+        COUNT(*) AS `solution_count`,
+        MAX(`solution_resemblance`) AS `solution_resemblance`
+    FROM `solution`
+    GROUP BY `problem_id`') as $problem) {
+  $solutions[$problem['problem_id']]['all'] = $problem;
 }
 
 foreach ($snapshot['problems'] as $problem) {
@@ -65,14 +76,20 @@ foreach ($snapshot['problems'] as $problem) {
     echo '<td>(' . $resemblance . ')</td>';
   }
   echo '<td><a href="solution.php?problem_id=' . $problem['problem_id'] . '">';
-  if (!isset($solution['solution_count'])) {
+  if (!isset($solution['all']['solution_count'])) {
     echo 'No';
-  } else if (is_null($solution['solution_resemblance'])) {
-    echo '??????';
-  } else if ($solution['solution_resemblance'] == 1.0) {
+  } else if ($solution['submitted']['solution_resemblance'] == 1.0) {
     echo '<b>Solved</b>';
+  } else if ($solution['all']['solution_resemblance'] == 1.0) {
+    echo '<b style="color:#888">Solved</b>';
+  } else if ($solution['submitted']['solution_resemblance'] ==
+             $solution['all']['solution_resemblance']) {
+    echo $solution['submitted']['solution_resemblance'];
+  } else if (is_null($solution['all']['solution_resemblance'])) {
+    echo '??????';
   } else {
-    echo $solution['solution_resemblance'];
+    echo '<span style="color:#888">(' .
+         $solution['all']['solution_resemblance'] . ')</span>';
   }
   echo '</a></td>';
   echo '<td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</td>";

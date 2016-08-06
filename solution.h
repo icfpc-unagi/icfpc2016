@@ -17,7 +17,7 @@ struct Solution {
   vector<vector<int>> facets;
 };
 
-void ReadSolution(std::istream& is, Solution* solution) {
+bool ReadSolution(std::istream& is, Solution* solution) {
   int n_verts;
   is >> n_verts;
   solution->src_verts.resize(n_verts);
@@ -39,4 +39,5 @@ void ReadSolution(std::istream& is, Solution* solution) {
   for (int i = 0; i < n_verts; ++i) {
     is >> solution->dst_verts[i];
   }
+  return is.good();
 }

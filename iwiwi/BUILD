@@ -34,3 +34,14 @@ cc_binary(
     linkopts = ["-lgmp"],
     linkstatic = 1,
 )
+
+cc_binary(
+    name = "score",
+    srcs = ["score.cc", "common.h"],
+    deps = [
+        "//external:base",
+        "//external:boost",
+    ],
+    linkopts = ["-lgmp"],
+    linkstatic = 1,
+)

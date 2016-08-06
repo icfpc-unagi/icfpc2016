@@ -18,7 +18,7 @@ function FindSolution() {
 
 function Submit($solution) {
   if (strlen(preg_replace(
-          '%[^\\s]*%', '', $solution['solution_data'])) <= 5000) {
+          '%[\\s]*%', '', $solution['solution_data'])) <= 5000) {
     $response = SubmitSolution(
         $solution['problem_id'], $solution['solution_data']);
     if (is_null($response)) {

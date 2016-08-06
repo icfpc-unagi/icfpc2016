@@ -62,30 +62,40 @@ int main(int argc, char** argv) {
   }
   printf(
       R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round">)",
-      min_x.convert_to<double>() - 0.005, min_y.convert_to<double>() - 0.005,
+      min_x.convert_to<double>() - 0.005, -max_y.convert_to<double>() - 0.005,
       (max_x - min_x).convert_to<double>() + 0.01,
       (max_y - min_y).convert_to<double>() + 0.01);
   printf(
-      R"(<style>path:hover{fill:orange}</style>)");
-  printf(
-      R"q(<g transform="translate(0,1) scale(1,-1)"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)q");
-  printf(
-      R"(<defs><g id="p">)");
-  for (int i = 0; i < solution.facets.size(); ++i) {
+      R"q(<style>.f :hover{fill:orange}</style><g transform="scale(1,-1)">)q");
+  if (!FLAGS_shrink_viewbox) {
     printf(
-        R"(<path id="i%d" pointer-events="painted" d=")", i);
-    for (int j = 0; j < solution.facets[i].size(); ++j) {
-      printf("%c%.3f %.3f", j == 0 ? 'M' : 'L',
-             solution.dst_verts[solution.facets[i][j]].x.convert_to<double>(),
-             solution.dst_verts[solution.facets[i][j]].y.convert_to<double>());
-    }
-    printf(R"(Z"/>)");
+        R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
   }
-  printf(
-      R"(</g></defs><use fill="silver" pointer-events="painted" xlink:href="#p"/><use fill="none" stroke="gray" stroke-width="0.005" xlink:href="#p"/>)");
+  vector<string> points;
+  for (const auto& facet : solution.facets) {
+    vector<string> strs;
+    for (const auto& j : facet) {
+      strs.push_back(StringPrintf(
+          "%.3f,%.3f", solution.dst_verts[j].x.convert_to<double>(),
+          solution.dst_verts[j].y.convert_to<double>()));
+    }
+    points.push_back(strings::Join(strs, " "));
+  }
+  printf(R"(<g fill="silver" class="f">)");
+  for (int i = 0; i < points.size(); ++i) {
+    printf(
+        R"(<polygon id="i%d" pointer-events="painted" points="%s"/>)", i,
+        points[i].c_str());
+  }
+  printf(R"(</g><g fill="none" stroke="gray" stroke-width="0.005">)");
+  for (int i = 0; i < points.size(); ++i) {
+    printf(
+        R"(<polygon points="%s"/>)", points[i].c_str());
+  }
+  printf("</g>");
   for (int i = 0; i < solution.dst_verts.size(); ++i) {
     printf(
-        R"(<circle fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)",
+        R"(<circle cx="%.3f" cy="%.3f" r="0.008"/>)",
         solution.dst_verts[i].x.convert_to<double>(),
         solution.dst_verts[i].y.convert_to<double>());
   }

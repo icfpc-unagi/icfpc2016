@@ -27,6 +27,12 @@ if ($problem['problem_id'] != $problem_id) {
   die('Unknown problem id');
 }
 
+if (GetParameter('plain')) {
+  header('Content-Type: text/plain');
+  echo GetBlob($problem['problem_spec_hash']);
+  exit();
+}
+
 $users = [];
 for ($id = 1; $id < 10; $id++) {
   $users["$id"] = "Contest Organizer Problem Set $id";
