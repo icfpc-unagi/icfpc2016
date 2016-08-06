@@ -18,10 +18,12 @@ function Run($command, $input) {
   }
   fwrite($pipes[0], str_replace("\r\n", "\n", $input));
   fclose($pipes[0]);
-  $stdout = stream_get_contents($pipes[1]);
-  $stderr = stream_get_contents($pipes[2]);
-  fclose($pipes[1]);
-  fclose($pipes[2]);
+  $stdout = '';
+  $stderr = '';
+  while (!feof($pipes[1]) || !feof($pipes[2])) {
+    $stdout .= stream_get_contents($pipes[1]);
+    $stderr .= stream_get_contents($pipes[2]);
+  }
   $return_value = proc_close($process);
   return ['command' => $command,
           'stdout' => $stdout,
