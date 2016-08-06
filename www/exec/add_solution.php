@@ -38,6 +38,18 @@ function AddSolution() {
     return $result;
   }
 
+  $solution_id = Database::SelectCell('
+      SELECT `solution_id` FROM `solution`
+      WHERE `problem_id` = {problem_id} AND
+            `solution_data` = {solution_data}
+      ORDER BY `solution_id` LIMIT 1',
+      ['problem_id' => $problem_id,
+       'solution_data' => FormatData($solution)]);
+  if ($solution_id) {
+    $result['stdout'] = 'duplicated with solution_id=' . $solution_id;
+    return $result;
+  }
+
   Database::Command('INSERT INTO `solution`{solution}',
       ['solution' => [
           'problem_id' => $problem_id,
