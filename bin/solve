@@ -19,7 +19,7 @@ solve_problem() {
 
   LOG INFO "${FLAGS_ai} AI is solving ${problem_id}..."
   curl --silent "http://db.sx9.jp/view/problem.php?plain=1&problem_id=${problem_id}" > "${problem_file}"
-  ninelet timeout "${FLAGS_timeout}s" "/alloc/global/ai/${FLAGS_ai}" \
+  ninelet timeout "${FLAGS_timeout}s" "/mirror/global/ai/${FLAGS_ai}" \
       < "${problem_file}" > "${solution_file}" || true
   LOG INFO "${FLAGS_ai} AI is submitting ${problem_id}..."
   "$(dirname "${BASH_SOURCE}")/submit_solution" \
