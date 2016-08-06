@@ -66,9 +66,8 @@ int main(int argc, char** argv) {
       (max_x - min_x).convert_to<double>() + 0.01,
       (max_y - min_y).convert_to<double>() + 0.01);
   printf(
-      R"(<style>path:hover{fill:orange}</style>)");
-  printf(
-      R"q(<g transform="translate(0,1) scale(1,-1)"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)q");
+      R"q(<style>path:hover{fill:orange}</style><g transform="translate(0,%.3f) scale(1,-1)"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)q",
+      (max_y - min_y).convert_to<double>() + 0.01);
   printf(
       R"(<defs><g id="p">)");
   for (int i = 0; i < solution.facets.size(); ++i) {
