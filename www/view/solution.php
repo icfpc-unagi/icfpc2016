@@ -65,6 +65,7 @@ foreach (Database::Select('
     WHERE `problem_id` = {problem_id}
     ORDER BY
       `solution_resemblance` DESC,
+      `solution_size`,
       `solution_submission` DESC,
       `solution_created` DESC',
     ['problem_id' => intval($problem_id)]) as $solution) {
