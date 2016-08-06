@@ -129,7 +129,7 @@ archive_tar() {
   if [ "$#" -eq 2 ]; then
     local command='#!/bin/bash
 set -e -u
-package_directory="${TMPDIR}/package.${RANDOM}.${RANDOM}.${RANDOM}.${RANDOM}.${RANDOM}/package"
+package_directory="${TMPDIR:-/tmp}/package.${RANDOM}.${RANDOM}.${RANDOM}.${RANDOM}.${RANDOM}/package"
 mkdir -p "${package_directory}"
 cat "${BASH_SOURCE}" | tail -n +NUM_OF_LINES | {
   pushd "${package_directory}" >/dev/null

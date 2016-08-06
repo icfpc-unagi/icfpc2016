@@ -1,0 +1,84 @@
+#!/bin/bash
+# imos-crypt encrypts/decrypts files.
+#
+# imos-crypt encrypts/decrypts files using an embedded password by default.
+# The embedded password is encrypted with a master password that should be
+# given by imos.  The installed_password flag makes imos-crypt use the
+# installed password, which should be installed by imos-start.  The password
+# flag forces the script to use the password given by the flag.  This script
+# uses AES-256-CBC to encrypt/decrypt.
+#
+# Usage:
+#     imos-crypt [options] [input output] ...
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
+DEFINE_string password '' 'Password to use instead.'
+DEFINE_bool installed_password false 'Use the installed password instead.'
+DEFINE_bool encrypt false 'Encrypt files.'
+DEFINE_bool decrypt false 'Decrypt files.'
+eval "${IMOSH_INIT}"
+
+get_password() {
+  if [ "${FLAGS_password}" != '' ]; then
+    sub::println "${FLAGS_password}"
+    return
+  fi
+  if (( FLAGS_installed_password )); then
+    local password_file="${IMOS_ROOT}/usr/imos/config/installed-password"
+    mkdir -p "$(dirname "${password_file}")"
+    if [ ! -f "${password_file}" ]; then
+      if [ "$(whoami)" != 'root' ]; then
+        LOG FATAL 'root privilege is required to install a password.'
+      fi
+      imos-crypt --decrypt \
+          "$(dirname "${BASH_SOURCE}")/data/installed-password.aes256" \
+          "${password_file}"
+      chmod 600 "${password_file}"
+    fi
+    if [ -r "${password_file}" ]; then
+      sub::println "$(cat "${password_file}")"
+    else
+      sub::println "$(sudo cat "${password_file}")"
+    fi
+    return
+  fi
+  local seed=() password=''
+  while :; do
+    seed=(
+        'U2FsdGVkX19rXUkSvOYoQ3HKqa4Xi7DXp2A/Fj4MxOeIU3CPuU10sDNAStBH86Sp'
+        'T03CKk8WxUNuNrDqqO1p7qhyS2uMKZBgWCBljIk+wiGGpof6qo0o6wHZTIb1PSzt'
+        'txeMgaVLKiHSb0WmPOlmFqiolTBBkE3sVmniwJbSw6G0FKiZHNPkuSENJhUN8Z74'
+        'tcjrCxGvGpB3QhgxbvU55Q==')
+    password="$(
+        for line in "${seed[@]}"; do echo "${line}"; done | \
+        openssl enc -aes-256-cbc -d -base64 || true)"
+    if [ "${password:0:4}" = 'mT25' ]; then break; fi
+    LOG ERROR 'Wrong password.'
+  done
+  sub::println "${password}"
+}
+
+main() {
+  if (( ! FLAGS_encrypt && ! FLAGS_decrypt )); then
+    LOG FATAL 'Either of the encrypt flag or the decrypt flag is required.'
+  fi
+  if (( "${#}" % 2 != 0 )); then
+    LOG FATAL 'The number of arguments must be an even number.'
+  fi
+  local password="$(get_password)"
+  while (( "${#}" != 0 )); do
+    local args=(
+        openssl enc -aes-256-cbc -base64 -pass "pass:${password}"
+        -in "${1}" -out "${2}")
+    shift; shift
+    if (( FLAGS_encrypt )); then
+      "${args[@]}"
+    elif (( FLAGS_decrypt )); then
+      "${args[@]}" -d
+    else
+      LOG FATAL 'Nothing to do.'
+    fi
+  done
+}
+
+main "$@"
