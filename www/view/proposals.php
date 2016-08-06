@@ -17,8 +17,12 @@ foreach (Database::Select('
         `proposal_id`,
         `problem_id`,
         `proposal_note`,
-        LENGTH(`proposal_problem`) AS `problem_size`,
-        LENGTH(`proposal_solution`) AS `solution_size`,
+        LENGTH(REPLACE(REPLACE(REPLACE(
+            `proposal_problem`, "\n", ""), "\r", ""), " ", ""))
+            AS `problem_size`,
+        LENGTH(REPLACE(REPLACE(REPLACE(
+            `proposal_solution`, "\n", ""), "\r", ""), " ", ""))
+            AS `solution_size`,
         `proposal_submission`,
         `proposal_modified`
     FROM `proposal`
