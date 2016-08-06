@@ -11,6 +11,6 @@ fi
 
 curl --dump-header - --silent \
      -H 'Expect: ' \
-     -F "solution=$(cat "${FLAGS_solution}")" \
+     -F "solution=@${FLAGS_solution}" \
     'http://db.sx9.jp/exec/solution.php' | \
 php "$(dirname "${BASH_SOURCE}")/library/parse.php"
