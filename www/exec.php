@@ -43,6 +43,7 @@ $stdin = tempnam(sys_get_temp_dir(), 'tmp');
 $stdout = tempnam(sys_get_temp_dir(), 'tmp');
 $stderr = tempnam(sys_get_temp_dir(), 'tmp');
 $return = tempnam(sys_get_temp_dir(), 'tmp');
+file_put_contents($stdin, $input);
 $files[] = $stdin;
 $files[] = $stdout;
 $files[] = $stderr;
