@@ -62,17 +62,18 @@ int main(int argc, char** argv) {
   }
   printf(
       R"(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round">)",
-      min_x.convert_to<double>() - 0.004, min_y.convert_to<double>() - 0.004,
-      Q(max_x - min_x).convert_to<double>() + 0.008,
-      Q(max_y - min_y).convert_to<double>() + 0.008);
+      min_x.convert_to<double>() - 0.005, min_y.convert_to<double>() - 0.005,
+      (max_x - min_x).convert_to<double>() + 0.01,
+      (max_y - min_y).convert_to<double>() + 0.01);
   printf(
       R"(<style>path:hover{fill:orange}</style>)");
   printf(
-      R"(<rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)");
+      R"q(<g transform="translate(0,1) scale(1,-1)"><rect x="0" y="0" width="1" height="1" fill="none" stroke="blue" stroke-width="0.005"/>)q");
+  printf(
+      R"(<defs><g id="p">)");
   for (int i = 0; i < solution.facets.size(); ++i) {
     printf(
-        R"(<path fill="silver" stroke="gray" stroke-width="0.005" id="i%d" pointer-events="painted" d=")",
-        i);
+        R"(<path id="i%d" pointer-events="painted" d=")", i);
     for (int j = 0; j < solution.facets[i].size(); ++j) {
       printf("%c%.3f %.3f", j == 0 ? 'M' : 'L',
              solution.dst_verts[solution.facets[i][j]].x.convert_to<double>(),
@@ -80,13 +81,15 @@ int main(int argc, char** argv) {
     }
     printf(R"(Z"/>)");
   }
+  printf(
+      R"(</g></defs><use fill="silver" pointer-events="painted" xlink:href="#p"/><use fill="none" stroke="gray" stroke-width="0.005" xlink:href="#p"/>)");
   for (int i = 0; i < solution.dst_verts.size(); ++i) {
     printf(
         R"(<circle fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)",
         solution.dst_verts[i].x.convert_to<double>(),
         solution.dst_verts[i].y.convert_to<double>());
   }
-  printf("</svg>");
+  printf("</g></svg>");
 
   return 0;
 }
