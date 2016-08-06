@@ -61,7 +61,6 @@ public class Myon
             
             //Console.Error.WriteLine(pt[i]);
 
-            
             //
             /*
             var nextb = 999;
@@ -115,12 +114,16 @@ public class Myon
                 var P3 = pt[(i + 1) % pt.Length];
 
                 Num nn = Point.S(P2.Sub(P1), P3.Sub(P1));
+                //Console.Error.WriteLine("nn : " + i + " " + nn);
                 if (nn.a < 0) temppt.Add(pt[i]);
-                else if(getBestValue)
+                else 
                 {
                     flag = true;
-                    Console.Error.WriteLine("giveup!(not totu)");
-                    return;
+                    if (getBestValue)
+                    {
+                        Console.Error.WriteLine("giveup!(not totu)");
+                        return;
+                    }
                 }
             }
             pt = temppt.ToArray();
@@ -200,6 +203,7 @@ public class Myon
             pdic[points[i]] = i;
         }
         polys.Add(firstl);
+
         getAns();
 
 
@@ -207,48 +211,7 @@ public class Myon
         var xdiff = xmax.Sub(xmin);
         var ydiff = ymax.Sub(ymin);
 
-        /*
-        Num divide;
-        int cnt;
 
-        cnt = 0;
-        divide = new Num(1, 2);
-
-
-        Console.Error.WriteLine(xdiff);
-        Console.Error.WriteLine(ydiff);
-
-        while (xdiff.CompareTo(divide) <= 0)
-        {
-            fold(new Point(divide, new Num(0)), new Point(divide, new Num(1)));
-            divide = divide.Div(new Num(2));
-            //cnt++; if (cnt > 3) break;
-        }
-
-        cnt = 0;
-        divide = new Num(1, 2);
-        while (ydiff.CompareTo(divide) <= 0)
-        {
-            fold(new Point(new Num(1), divide), new Point(new Num(0), divide));
-            divide = divide.Div(new Num(2));
-            //cnt++; if (cnt > 3) break;
-        }
-         */
-        /*
-        foreach (var item in polys)
-        {
-            foreach (var p in item)
-            {
-                Console.Error.WriteLine(p);
-            }
-        }
-        for (int i = 0; i < points.Count; i++)
-        {
-            Console.Error.WriteLine(points[i]);
-        }
-
-        Console.Error.WriteLine("end");
-         */
 
 
         for (int T = 0; T < 100; T++ )
@@ -256,24 +219,20 @@ public class Myon
             bool flag = false;
             for (int ii = 0; ii < pt2.Length; ii++)
             {
-                bool flag2 = true;
-                while (flag2)
-                {
-                    flag2 = false;
-                    //int i = (ii * 2) % N;
-                    //if (ii * 2 >= N && N % 2 == 0) i++;
-                    int i = (ii + 1) % N;
-                    Point P1 = pt2[i];
-                    Point P2 = pt2[(i + 1) % pt2.Length];
+                //int i = (ii * 2) % N;
+                //if (ii * 2 >= N && N % 2 == 0) i++;
+                int i = (ii) % N;
+                Point P1 = pt2[i];
+                Point P2 = pt2[(i + 1) % pt2.Length];
 
-                    flag2 |= fold(P1, P2);
-                    flag |= flag2;
-                    //Console.Error.WriteLine(i);
-                }
+                flag |= fold(P1, P2);
+
+
             }
 
+
             if (!flag) break;
-            //if (ans2 != ans) break;
+            if (ans2 != ans) break;
         }
 
         if (getBestValue && ans2 != ans)
@@ -314,8 +273,8 @@ public class Myon
 
     void getAns()
     {
-        ans = "";
-        ans2 = "";
+        //ans = "";
+        //ans2 = "";
 
         anstemp = "";
         anstemp += (points.Count);
