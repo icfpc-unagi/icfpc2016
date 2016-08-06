@@ -9,7 +9,7 @@ require_once(dirname(__FILE__) . '/../library/api.php');
 <body>
 <h1>Proposals</h1>
 <table>
-<tr><td>Problem ID</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Publish Time</td><td>Edit</td></tr>
+<tr><td>Problem ID</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Publish Time</td><td>Submission Time</td><td>Edit</td></tr>
 <?php
 
 foreach (Database::Select('
@@ -33,6 +33,7 @@ foreach (Database::Select('
   echo '<td>' . $proposal['problem_size'] . "</td>";
   echo '<td>' . $proposal['solution_size'] . "</td>";
   echo '<td>' . date('Y-m-d H:i:s', $proposal['proposal_id']) . "</td>";
+  echo '<td>' . $proposal['proposal_submission'] . "</td>";
   echo '<td><a href="proposal.php?proposal_id=' . $proposal['proposal_id'] .
        '">Edit</a></td>';
   echo "</tr>\n";
