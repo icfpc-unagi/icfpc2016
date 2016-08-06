@@ -26,7 +26,17 @@ function AddSolution() {
 
   $solution = FormatData($solution);
 
-  if (trim($solution) == '' && is_null($solution_ai)) {
+  if (trim($solution) == '') {
+    if (!is_null($solution_ai)) {
+      Database::Command('
+          INSERT INTO `solution`{solution}',
+          ['solution' => [
+              'problem_id' => $problem_id,
+              'solution_ai' => $solution_ai,
+              'solution_resemblance' => 0,
+              'solution_submission' => '2000-01-01 00:00:00']]);
+      return ['code' => 0, 'stdout' => 'accepted empty data', 'stderr' => ''];
+    }
     Fail('Solution is empty');
   }
 
@@ -43,17 +53,6 @@ function AddSolution() {
       'solution_file' => $solution]);
 
   if ($result['code'] != 0) {
-    return $result;
-  }
-
-  if (trim($solution) == '') {
-    Database::Command('
-        INSERT INTO `solution`{solution}',
-        ['solution' => [
-            'problem_id' => $problem_id,
-            'solution_ai' => $solution_ai,
-            'solution_resemblance' => 0,
-            'solution_submission' => '2000-01-01 00:00:00']]);
     return $result;
   }
 
