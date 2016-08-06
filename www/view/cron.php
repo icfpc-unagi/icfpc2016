@@ -23,7 +23,7 @@ function Run() {
     $output .= 'Unlock auto: ' . trim(file_get_contents('http://db.sx9.jp/view/unlock_auto.php')) . "\n";
   }
   if (GetCronToken('update', 120)) {
-    $output .= 'Update: ' . trim(file_get_contents('hhttp://db.sx9.jp/api/update.php')) . "\n";
+    $output .= 'Update: ' . trim(file_get_contents('http://db.sx9.jp/api/update.php')) . "\n";
   }
   return $output;
 }
