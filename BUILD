@@ -65,6 +65,8 @@ cc_binary(
         ":libsolution",
         ":polygon",
     ],
+    linkopts = ["-lgmp"],
+    linkstatic = 1,
 )
 
 cc_binary(

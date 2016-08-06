@@ -17,7 +17,7 @@ struct Problem {
   vector<pair<Vertex, Vertex>> skelton;
 };
 
-void ReadProblem(std::istream& is, Problem* p) {
+bool ReadProblem(std::istream& is, Problem* p) {
   int n_polys;
   is >> n_polys;
   p->polygons.resize(n_polys);
@@ -30,6 +30,7 @@ void ReadProblem(std::istream& is, Problem* p) {
   for (int i = 0; i < n_edges; ++i) {
     is >> p->skelton[i].first >> p->skelton[i].second;
   }
+  return is.good();
 }
 
 void WriteProblem(const Problem& p, std::ostream& os) {
