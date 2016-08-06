@@ -43,22 +43,25 @@ foreach ($snapshot['users'] as $user) {
 
 ksort($users);
 
-?><html>
-<meta charset="UTF-8">
-<title>Problem <?php echo $problem['problem_id']; ?></title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<body>
-<h1>Problem Details</h1>
-<table>
-<?php
-echo '<tr><td>ID</td><td>' . $problem['problem_id'] . "</td></tr>\n";
-echo '<tr><td>Publish Time</td><td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</td></tr>\n";
-echo '<tr><td>Owner</td><td>' . htmlspecialchars($users[$problem['owner']]) . "</td></tr>\n";
-echo '<tr><td>Problem Size</td><td>' . $problem['problem_size'] . "</td></tr>\n";
-echo '<tr><td>Solution Size</td><td>' . $problem['solution_size'] . "</td></tr>\n";
+
+StartPage();
+
+$data = GetBlob($problem['problem_spec_hash']);
+
 ?>
+<h1 class="page-header">Problem Details</h1>
+<table class="layout"><tr><td>
+<table class="table table-bordered">
+<?php
+echo '<tr><th>ID</th><td>' . $problem['problem_id'] . "</td></tr>\n";
+echo '<tr><th>Publish Time</th><td>' . date('Y-m-d H:i:s', $problem['publish_time']) . "</th></tr>\n";
+echo '<tr><th>Owner</th><td>' . htmlspecialchars($users[$problem['owner']]) . "</td></tr>\n";
+echo '<tr><th>Problem Size</th><td>' . $problem['problem_size'] . "</td></tr>\n";
+echo '<tr><th>Solution Size</th><td>' . $problem['solution_size'] . "</td></tr>\n";
+?>
+<tr><th>Data</th><td><textarea style="width:100%;height:100px;font-size:100%;font-family:monospace"><?php echo htmlspecialchars($data); ?></textarea></td></tr>
 </table>
-<h1>Figure</h1>
+</td><td style="padding:20px;vertical-algin:top;">
 <?php
 
 function Draw($data) {
@@ -77,19 +80,82 @@ function Draw($data) {
   echo stream_get_contents($pipes[1]);
   $stderr = stream_get_contents($pipes[2]);
   if (strlen($stderr) > 0) {
-    echo "<h2>Standard Error</h2>\n";
+    echo "<h3>Standard Error</h3>\n";
     echo "<pre>" . htmlspecialchars(trim($stderr)) . "</pre>\n";
   }
   $return_value = proc_close($process);
 }
 
-$data = GetBlob($problem['problem_spec_hash']);
 Draw($data);
 
 ?>
-<h1>Ranking</h1>
-<table>
-<tr><td>Rank</td><td>Resemblance</td><td>Size</td></tr>
+</td></tr></table>
+<h1 class="page-header">Ranking</h1>
+<table class="layout"><tr><td style="width:65%">
+<h3>Internal</h3>
+<table class="table table-condensed table-striped">
+  <tbody>
+    <tr>
+      <th>Solution ID</th>
+      <th>AI Name</th>
+      <th>Resemblance</th>
+      <th>Solution Size</th>
+      <th>Submission Time</th>
+      <th>Creation Time</th>
+    </tr>
+<?php
+
+
+foreach (Database::Select('
+    SELECT
+      `solution_id`,
+      `problem_id`,
+      `solution_ai`,
+      `solution_resemblance`,
+      `solution_submission`,
+      LENGTH(REPLACE(REPLACE(REPLACE(
+          `solution_data`, "\n", ""), "\r", ""), " ", "")) AS `solution_size`,
+      `solution_lock`,
+      `solution_created`
+    FROM `solution`
+    WHERE `problem_id` = {problem_id}
+    ORDER BY
+      `solution_resemblance` DESC,
+      `solution_size`,
+      `solution_submission` DESC,
+      `solution_created` DESC',
+    ['problem_id' => intval($problem_id)]) as $solution) {
+  if ($solution['solution_lock'] > 1483196400 &&
+      !$solution['solution_submission']) {
+    echo '<tr class="pending">';
+    echo '<td>' . $solution['solution_id'] .
+         ' (<a href="unlock.php?solution_id=' . $solution['solution_id'] .
+         '&problem_id=' . $solution['problem_id'] . '">Unlock</a>)</td>';
+  } else {
+    echo '<tr>';
+    echo '<td>' . $solution['solution_id'] . '</td>';
+  }
+  echo '<td>' . htmlspecialchars($solution['solution_ai']) . '</td>';
+  echo '<td>' . $solution['solution_resemblance'] . '</td>';
+  echo '<td>' . $solution['solution_size'] .
+       ' (<a href="solution_data.php?solution_id=' .
+       $solution['solution_id'] . '&problem_id=' . $solution['problem_id'] .
+       '">View</a>)</td>';
+  echo '<td>' . $solution['solution_submission'] . '</td>';
+  echo '<td>' . $solution['solution_created'] . '</td>';
+  echo "</tr>\n";
+}
+
+?></table>
+</td><td>
+<h3>External</h3>
+<table class="table table-condensed table-striped">
+  <tbody>
+    <tr>
+      <th>Rank</th>
+      <th>Resemblance</th>
+      <th>Solution Size</th>
+    </tr>
 <?php
 
 $rank = 1;
@@ -103,7 +169,4 @@ foreach ($problem['ranking'] as $user) {
 }
 
 ?>
-</table>
-<h1>Data</h1>
-<textarea style="width:100%;height:300px;font-size:100%;font-family:monospace"><?php echo htmlspecialchars($data); ?></textarea>
-</body>
+</td></tr></table>
