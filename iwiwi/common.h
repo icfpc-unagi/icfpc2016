@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cassert>
 #include <sstream>
+#include <fstream>
 
 #include <boost/assert.hpp>
 #include <boost/geometry.hpp>
