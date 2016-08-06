@@ -107,9 +107,11 @@ int main(int argc, char** argv) {
 
   // Verify src facets congruence vs dst
   vector<ccwRing> dst_rings;
-  for (const auto& facet : solution.facets) {
-    LOG_IF(FATAL, facet.size() < 3) << "Facet has less than 3 vertices ("
-                                    << strings::JoinInts(facet, ",") << ")";
+  for (int facet_id = 0; facet_id < solution.facets.size(); ++facet_id) {
+    const auto& facet = solution.facets[facet_id];
+    LOG_IF(FATAL, facet.size() < 3) << "Facet[" << facet_id << "]("
+                                    << strings::JoinInts(facet, " ")
+                                    << ") has less than 3 vertices";
     ccwRing src_ring, dst_ring;
     for (const auto& i : facet) {
       bg::append(src_ring,
@@ -136,7 +138,8 @@ int main(int argc, char** argv) {
       if (i == 1) mirror = gs2.sign() != gd2.sign();
       bool congruent = gs1 == gd1 && gs2 == (mirror ? -gd2 : gd2);
       LOG_IF(FATAL, !congruent)
-          << "Facet is not congruent between source and destination: "
+          << "Facet[" << facet_id << "](" << strings::JoinInts(facet, " ")
+          << ") is not congruent between source and destination: "
           << bg::wkt(src_ring) << " vs " << bg::wkt(dst_ring);
     }
 
