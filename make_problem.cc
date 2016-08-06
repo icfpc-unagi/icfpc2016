@@ -9,11 +9,11 @@
 #include "problem.h"
 #include "solution.h"
 #include <boost/geometry.hpp>
+#include <boost/geometry/algorithms/area.hpp>
 #include <boost/geometry/algorithms/union.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/iterators/closing_iterator.hpp>
 #include <boost/multiprecision/gmp.hpp>
 
 DEFINE_string(input, "/dev/stdin", "input solution file");

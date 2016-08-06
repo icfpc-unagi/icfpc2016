@@ -11,7 +11,6 @@ using boost::rational_cast;
 
 typedef boost::multiprecision::number<boost::multiprecision::gmp_rational,
                                       boost::multiprecision::et_off> Q;
-typedef std::complex<Q> C;
 
 namespace std {
 // Dummy functions for std::complex
@@ -38,11 +37,11 @@ bool is_ccw(const Polygon& p) {
 }
 
 Q consume_rational(std::istream& is) {
-  while (isspace(is.peek())) {
+  while (is.good() && isspace(is.peek())) {
     is.get();
   }
   string buf;
-  while (true) {
+  while (is.good()) {
     int c = is.peek();
     if (isdigit(c) || c == '-' || c == '/') {
       buf += c;
@@ -51,6 +50,7 @@ Q consume_rational(std::istream& is) {
       break;
     }
   }
+  CHECK(is.good()) << buf;
   return Q(buf);
 }
 
@@ -70,10 +70,10 @@ std::ostream& operator<<(std::ostream& os, const Vertex& v) {
 
 std::istream& operator>>(std::istream& is, Polygon& p) {
   int n_verts;
-  is >> n_verts;
+  CHECK(is >> n_verts);
   p.resize(n_verts);
   for (int i = 0; i < n_verts; ++i) {
-    is >> p[i];
+    CHECK(is >> p[i]);
   }
   return is;
 }
