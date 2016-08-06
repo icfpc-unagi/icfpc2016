@@ -47,7 +47,7 @@ if (!is_null(GetParameter('solution'))) {
 </form>
 <h1>Solutions for <?php echo $problem_id; ?></h1>
 <table>
-<tr><td>Solution ID</td><td>Problem ID</td><td>Resemblance</td><td>Data</td><td>Size</td><td>Submission Time</td><td>Created Time</td></tr>
+<tr><td>Solution ID</td><td>AI Name</td><td>Resemblance</td><td>Data</td><td>Size</td><td>Submission Time</td><td>Created Time</td></tr>
 <?php
 
 
@@ -55,6 +55,7 @@ foreach (Database::Select('
     SELECT
       `solution_id`,
       `problem_id`,
+      `solution_ai`,
       `solution_resemblance`,
       `solution_submission`,
       LENGTH(REPLACE(REPLACE(REPLACE(
@@ -79,7 +80,7 @@ foreach (Database::Select('
     echo '<tr>';
     echo '<td>' . $solution['solution_id'] . '</td>';
   }
-  echo '<td>' . $solution['problem_id'] . '</td>';
+  echo '<td>' . htmlspecialchars($solution['solution_ai']) . '</td>';
   echo '<td>' . $solution['solution_resemblance'] . '</td>';
   echo '<td><a href="solution_data.php?solution_id=' . $solution['solution_id'] . '&problem_id=' . $solution['problem_id'] . '">View</a></td>';
   echo '<td>' . $solution['solution_size'] . '</td>';
