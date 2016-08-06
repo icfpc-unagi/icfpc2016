@@ -33,6 +33,14 @@ using ccwPolygon = bg::model::polygon<gPoint, false, false>;
 using ccwMultiPolygon = bg::model::multi_polygon<ccwPolygon>;
 using namespace std;
 
+namespace boost {
+// For bg::convert across coordinate systems from gPoint to RealPoint
+template <>
+double numeric_cast<double>(const Q& x) {
+  return x.convert_to<double>();
+}
+}
+
 gPoint rotCCW(const gPoint& p) { return gPoint(-p.y(), p.x()); }
 
 Q cross(const gPoint& lhs, const gPoint& rhs) {
@@ -176,6 +184,23 @@ int main(int argc, char** argv) {
     ccwMultiPolygon diff1, diff2;
     bg::difference(silhouette, dst_mpoly, diff1);
     bg::difference(dst_mpoly, silhouette, diff2);
+    if (FLAGS_show_figure) {
+      using RealPoint = bg::model::d2::point_xy<double>;
+      bg::model::multi_polygon<bg::model::polygon<RealPoint, false, false>>
+          real_diff1, real_diff2;
+      bg::convert(diff1, real_diff1);
+      bg::convert(diff2, real_diff2);
+      bg::model::box<RealPoint> rect = {{0, 0}, {1, 1}};
+      bg::svg_mapper<RealPoint> mapper(
+          std::cout, 1000, 1000,
+          R"(width="400px" height="400px" viewBox="0 0 1000 1000")");
+      mapper.add(rect);
+      mapper.add(real_diff1);
+      mapper.add(real_diff2);
+      mapper.map(rect, "fill:none;stroke:blue;stroke-width:5");
+      mapper.map(real_diff1, "fill:turquoise");
+      mapper.map(real_diff2, "fill:tomato");
+    }
     LOG(WARNING) << "Diff1: " << bg::wkt(diff1);
     LOG(WARNING) << "Diff2: " << bg::wkt(diff2);
   }
