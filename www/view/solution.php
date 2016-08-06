@@ -45,7 +45,7 @@ if (!is_null(GetParameter('solution'))) {
 <textarea name="solution" style="width:100%;height:200px"></textarea>
 <input type="submit" value="Submit">
 </form>
-<h1>Solutions for <?php echo $problem_id; ?></h1>
+<h1>Solutions for <a href="problem.php?problem_id=<?php echo $problem_id; ?>"><?php echo $problem_id; ?></a></h1>
 <table>
 <tr><td>Solution ID</td><td>AI Name</td><td>Resemblance</td><td>Data</td><td>Size</td><td>Submission Time</td><td>Created Time</td></tr>
 <?php
