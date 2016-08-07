@@ -41,6 +41,7 @@ namespace bg = boost::geometry;
 
 // using Bigrat = boost::multiprecision::cpp_rational;
 // using Bigrat = bm::number<bm::cpp_rational, bm::et_off>;
+using Bignum = bm::mpz_int;
 using Bigrat = bm::number<bm::gmp_rational, bm::et_off>;
 using Point = bg::model::d2::point_xy<Bigrat>;
 using Segment = bg::model::segment<Point>;
@@ -49,6 +50,20 @@ using pii = pair<int, int>;
 
 pii MakePairUnordered(int a, int b) {
   return mp(min(a, b), max(a,b));
+}
+
+template<typename T>
+std::vector<T> ParseSpaceSeparatedString(const std::string &str) {
+  std::istringstream ss(str);
+  std::vector<T> res;
+  for (T t; ss >> t; ) res.emplace_back(t);
+  return res;
+}
+
+template<typename T>
+std::vector<T> ParseCommaSeparatedString(std::string str) {
+  std::replace(str.begin(), str.end(), ',', ' ');
+  return ParseSpaceSeparatedString<T>(str);
 }
 
 inline string ReadAllAndRemoveComma(istream &is) {
