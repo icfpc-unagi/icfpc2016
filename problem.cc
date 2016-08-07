@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
     min_x = min_y = 0;
   }
   printf(
-      R"q(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round"><g transform="scale(1,-1)">)q",
+      R"q(<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400px" height="400px" viewBox="%.3f %.3f %.3f %.3f" stroke-linejoin="round" stroke-linecap="round"><g transform="scale(1,-1)"><style>circle:hover{fill:red}</style>)q",
       min_x.convert_to<double>() - 0.005, -max_y.convert_to<double>() - 0.005,
       (max_x - min_x).convert_to<double>() + 0.01,
       (max_y - min_y).convert_to<double>() + 0.01);
@@ -106,8 +106,8 @@ int main(int argc, char** argv) {
   printf("</g>");
   for (int i = 0; i < filtered_problem.vertices.size(); ++i) {
     printf(
-        R"(<circle id="v%d" fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)", i,
-        filtered_problem.vertices[i].x.convert_to<double>(),
+        R"(<circle id="v%d" fill="black" pointer-events="painted" cx="%.3f" cy="%.3f" r="0.008"/>)",
+        i, filtered_problem.vertices[i].x.convert_to<double>(),
         filtered_problem.vertices[i].y.convert_to<double>());
   }
   printf("</g></svg>");
