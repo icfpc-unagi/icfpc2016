@@ -34,7 +34,7 @@ public class SimpleSolver extends Solver {
 	}
 	
 	public boolean rec(State s) {
-		if (debug) s.vis();
+		if (debug > 0) s.vis();
 //		if (debug && s.usedArea().compareTo(new R(BigInteger.valueOf(9),BigInteger.valueOf(10))) > 0) s.vis();
 		if (s.usedArea().compareTo(R.ONE) == 0) {
 			System.out.print(s);

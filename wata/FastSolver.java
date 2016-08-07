@@ -10,6 +10,8 @@ import tc.wata.util.*;
 
 public class FastSolver extends Solver {
 	
+	Vis vis;
+	
 	@Override
 	public boolean solve() {
 		R total = R.ZERO;
@@ -66,13 +68,6 @@ public class FastSolver extends Solver {
 	R maxArea = R.ZERO;
 	
 	public boolean rec(State s) {
-		if (debug) {
-//			R used = s.usedArea();
-//			if (maxArea.compareTo(used) < 0) {
-//				maxArea = used;
-				s.vis();
-//			}
-		}
 		if (s.usedArea().compareTo(AREA) == 0) {
 			Debug.check(s.remainingArea().signum() == 0);
 			s = s.unfold();
@@ -117,6 +112,13 @@ public class FastSolver extends Solver {
 				p1 = b.poly[1];
 				p2 = b.poly[0];
 			}
+		}
+		if (debug > 0) {
+//			R used = s.usedArea();
+//			if (maxArea.compareTo(used) < 0) {
+//				maxArea = used;
+				s.vis();
+//			}
 		}
 		if (canPlace(s, p1) && rec(place(s, p1))) return true;
 		return canPlace(s, p2) && rec(place(s, p2));
@@ -302,8 +304,12 @@ public class FastSolver extends Solver {
 			return s;
 		}
 		public void vis() {
-			Vis vis = new Vis();
-			vis.setRange(-0.1, -0.1, 1.1, 2.2);
+			if (vis == null) {
+				vis = new Vis();
+				vis.setRange(-0.1, -0.1, 1.1, 2.2);
+			} else {
+				vis.clear();
+			}
 			vis.g.setColor(Color.blue);
 			double x1 = lx.getDouble(), x2 = ux.getDouble(), y1 = ly.getDouble(), y2 = uy.getDouble();
 			vis.g.draw(vis.segment(x1, y1, x2, y1));
@@ -354,8 +360,11 @@ public class FastSolver extends Solver {
 			}
 			vis.g.setColor(Color.GREEN);
 			for (Border b : border) vis.g.draw(vis.segment(ps[b.p1].x.getDouble(), ps[b.p1].y.getDouble(), ps[b.p2].x.getDouble(), ps[b.p2].y.getDouble()));
-			vis.vis(true);
-			vis.dispose();
+			vis.vis(debug == 1);
+			if (debug == 1) {
+				vis.dispose();
+				vis = null;
+			}
 		}
 	}
 	

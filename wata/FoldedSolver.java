@@ -65,7 +65,7 @@ public class FoldedSolver extends Solver {
 	R maxArea = R.ZERO;
 	
 	public boolean rec(State s) {
-		if (debug) {
+		if (debug > 0) {
 			R used = s.usedArea();
 			if (maxArea.compareTo(used) < 0) {
 				maxArea = used;

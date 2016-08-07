@@ -8,7 +8,7 @@ import java.util.*;
 import tc.wata.debug.*;
 import tc.wata.util.*;
 
-public class HintSolver extends Solver {
+public class BakusokuSolver extends Solver {
 	
 	Vis vis;
 	
@@ -56,55 +56,94 @@ public class HintSolver extends Solver {
 			System.err.printf("Total length: %s%n", total);
 			s.pid = null;
 			s.setPid();
+			if (hintN <= 1) {
+				ArrayList<Poly> plist = new ArrayList<Poly>();
+				for (int i = 0; i < polySkeleton.length; i++) {
+					for (int j = 0; j < polySkeleton[i].length; j++) {
+						Poly p = placePoly(new P(lx, ly), new P(ux, ly), i, j, false);
+						if (p != null && canPlace(s, p)) plist.add(p);
+						R d = psSkeleton[Utils.get(polySkeleton[i], j + 1)].sub(psSkeleton[polySkeleton[i][j]]).abs2().sqrt();
+						if (d != null) {
+							p = placePoly(new P(d, R.ZERO), new P(lx, ly), i, j, true);
+							if (p != null && canPlace(s, p)) plist.add(p);
+						}
+					}
+				}
+				Collections.shuffle(plist, rand);
+				int count = 0;
+				for (Poly p : plist) {
+					System.err.printf("Solving: %d / %d%n", count++, plist.size());
+					if (rec(place(s, p, -1))) return true;
+				}
+				return false;
+			} else {
+				s.last = new BB();
+				s.last.minX = s.last.minY = -1;
+				s.last.maxX = s.last.maxY = 2;
+				return rec(s);
+			}
 		}
-		if (hintN <= 1) {
-			ArrayList<Poly> plist = new ArrayList<Poly>();
+		
+		BigInteger[] bs;
+		if (FOLD == 0) {
+			R total = R.ZERO;
+			for (int i = 0; i < polySkeleton.length; i++) total = total.add(areas[i]);
+			TreeSet<BigInteger> set = new TreeSet<BigInteger>();
+			set.add(BigInteger.ONE);
 			for (int i = 0; i < polySkeleton.length; i++) {
 				for (int j = 0; j < polySkeleton[i].length; j++) {
-					Poly p = placePoly(new P(lx, ly), new P(ux, ly), i, j, false);
-					if (p != null && canPlace(s, p)) plist.add(p);
 					R d = psSkeleton[Utils.get(polySkeleton[i], j + 1)].sub(psSkeleton[polySkeleton[i][j]]).abs2().sqrt();
-					if (d != null) {
-						p = placePoly(new P(d, R.ZERO), new P(lx, ly), i, j, true);
-						if (p != null && canPlace(s, p)) plist.add(p);
+					if (d != null && d.num.equals(BigInteger.ONE) && total.compareTo(d) <= 0) {
+						set.add(d.den);
 					}
 				}
 			}
-			Collections.shuffle(plist, rand);
-			int count = 0;
-			for (Poly p : plist) {
-				System.err.printf("Solving: %d / %d%n", count++, plist.size());
-				if (rec(place(s, p))) return true;
-			}
-			return false;
+			bs = set.toArray(new BigInteger[0]);
+			sort(bs);
 		} else {
-			s.last = new BB();
-			s.last.minX = s.last.minY = -1;
-			s.last.maxX = s.last.maxY = 2;
-			return rec(s);
+			bs = new BigInteger[]{BigInteger.valueOf(FOLD)};
 		}
+		for (int i = bs.length - 1; i >= 0; i--) {
+			Debug.print("fold", bs[i]);
+			ux = AREA = new R(BigInteger.ONE, bs[i]);
+			if (solve2()) return true;
+		}
+		return false;
 	}
 	
 	R lx = R.ZERO, ux = R.ONE, ly = R.ZERO, uy = R.ONE, AREA = R.ONE;
 	
+	boolean solve2() {
+		ArrayList<Poly> plist = new ArrayList<Poly>();
+		State s = new State();
+		for (int i = 0; i < polySkeleton.length; i++) {
+			for (int j = 0; j < polySkeleton[i].length; j++) {
+				Poly p = placePoly(new P(lx, ly), new P(ux, ly), i, j, false);
+				if (p != null && canPlace(s, p)) plist.add(p);
+				R d = psSkeleton[Utils.get(polySkeleton[i], j + 1)].sub(psSkeleton[polySkeleton[i][j]]).abs2().sqrt();
+				if (d != null) {
+					p = placePoly(new P(d, R.ZERO), new P(lx, ly), i, j, true);
+					if (p != null && canPlace(s, p)) plist.add(p);
+				}
+			}
+		}
+		Collections.shuffle(plist, rand);
+		int count = 0;
+		for (Poly p : plist) {
+			System.err.printf("%d / %d%n", count++, plist.size());
+			if (rec(place(s, p, -1))) return true;
+		}
+		return false;
+	}
+	
 	R maxArea = R.ZERO;
 	
 	public boolean rec(State s) {
-		if (maxArea.compareTo(s.usedArea()) < 0) {
-			maxArea = s.usedArea;
-			System.err.printf("%.2f%% filled%n", maxArea.getDouble2() * 100.0);
-		}
-		if (debug > 0) {
-//			R used = s.usedArea();
-//			if (maxArea.compareTo(used) < 0) {
-//				maxArea = used;
-				s.vis();
-//			}
-		}
 		if (s.usedArea().compareTo(AREA) == 0) {
 			Debug.check(s.remainingArea().signum() == 0);
+			s = s.unfold();
 			System.out.print(s);
-//			s.vis();
+			if (debug > 0) s.vis();
 			return true;
 		}
 		for (Border b : s.border) {
@@ -114,36 +153,50 @@ public class HintSolver extends Solver {
 						b.poly[i] = null;
 					}
 				}
+//				if (b.poly[i] != null && s.used[b.poly[i].pid] > 0 && s.usedArea().add(areas[b.poly[i].pid]).add(s.remainingArea()).compareTo(R.ONE) > 0) {
+//					b.poly[i] = null;
+//				}
 			}
 			if (b.poly[0] == null && b.poly[1] == null) return false;
 		}
 		for (Border b : s.border) {
 			for (int i = 0; i < 2; i++) {
 				if (b.poly[1 - i] == null) {
-					return canPlace(s, b.poly[i]) && rec(place(s, b.poly[i]));
+					return canPlace(s, b.poly[i]) && rec(place(s, b.poly[i], b.fold[i] ? Utils.pair(s.cor[b.p1], s.cor[b.p2]) : -1));
 				}
 			}
 		}
 		double maxScore = -1;
 		Poly p1 = null, p2 = null;
+		long e1 = -1, e2 = -1;
 		for (Border b : s.border) {
 //			Debug.check(canPlace(s, b.poly[0]));
 //			Debug.check(canPlace(s, b.poly[1]));
-			double score = score(s, b.poly[0]);
+			double score = score(s, b.poly[0], Utils.pair(s.cor[b.p1], s.cor[b.p2]));
 			if (maxScore < score) {
 				maxScore = score;
 				p1 = b.poly[0];
 				p2 = b.poly[1];
+				e1 = b.fold[0] ? Utils.pair(s.cor[b.p1], s.cor[b.p2]) : -1;
+				e2 = b.fold[1] ? Utils.pair(s.cor[b.p1], s.cor[b.p2]) : -1;
 			}
-			score = score(s, b.poly[1]);
+			score = score(s, b.poly[1], Utils.pair(s.cor[b.p1], s.cor[b.p2]));
 			if (maxScore < score) {
 				maxScore = score;
 				p1 = b.poly[1];
 				p2 = b.poly[0];
+				e1 = b.fold[1] ? Utils.pair(s.cor[b.p1], s.cor[b.p2]) : -1;
+				e2 = b.fold[0] ? Utils.pair(s.cor[b.p1], s.cor[b.p2]) : -1;
 			}
 		}
-		if (canPlace(s, p1) && rec(place(s, p1))) return true;
-		return canPlace(s, p2) && rec(place(s, p2));
+		if (maxArea.compareTo(s.usedArea()) < 0) {
+			maxArea = s.usedArea;
+			System.err.printf("%.2f%% filled%n", maxArea.getDouble2() * 100.0);
+		}
+		if (debug > 0) s.vis();
+		if (canPlace(s, p1) && rec(place(s, p1, e1))) return true;
+		if (debug > 0) s.vis();
+		return canPlace(s, p2) && rec(place(s, p2, e2));
 	}
 	
 	boolean canPlace(State s, Poly poly) {
@@ -167,7 +220,7 @@ public class HintSolver extends Solver {
 		return true;
 	}
 	
-	State place(State s, Poly poly) {
+	State place(State s, Poly poly, long foldE) {
 		State t = new State(s);
 		t.used[poly.pid]++;
 		t.ps = copyOf(s.ps, s.ps.length + poly.ps.length);
@@ -208,6 +261,7 @@ public class HintSolver extends Solver {
 			}
 		}
 		t.border = bs.toArray(new Border[0]);
+		if (foldE >= 0 && t.folds != null) inc(t.folds, foldE);
 		return t;
 	}
 	
@@ -226,9 +280,19 @@ public class HintSolver extends Solver {
 		return b;
 	}
 	
-	double score(State s, Poly poly) {
-		if (s.used[poly.pid] == 0) return 1;
-		return 0;
+	double score(State s, Poly poly, long foldE) {
+		if (s.used[poly.pid] == 0) return 1 + (10 - poly.bb.minX) / 10.0;
+		return (10 - poly.bb.minX) / 10.0;
+	}
+	
+	int get(Map<Long, Integer> map, long key) {
+		Integer v = map.get(key);
+		if (v == null) return 0;
+		return v;
+	}
+	
+	void inc(Map<Long, Integer> map, long key) {
+		map.put(key, get(map, key) + 1);
 	}
 	
 	class State {
@@ -240,6 +304,7 @@ public class HintSolver extends Solver {
 		BB last;
 		Map<P, Integer> pid;
 		R usedArea, remainingArea;
+		Map<Long, Integer> folds;
 		State() {
 			used = new int[polySkeleton.length];
 			ps = new P[0];
@@ -247,10 +312,12 @@ public class HintSolver extends Solver {
 			poly = new int[0][];
 			border = new Border[0];
 			pid = new TreeMap<P, Integer>();
+//			folds = new TreeMap<Long, Integer>(); //
 		}
 		State(State s) {
 			used = s.used.clone();
 			poly = copyOf(s.poly, s.poly.length + 1);
+			if (s.folds != null) folds = new TreeMap<Long, Integer>(s.folds);
 		}
 		R usedArea() {
 			if (usedArea != null) return usedArea;
@@ -333,8 +400,9 @@ public class HintSolver extends Solver {
 			if (vis == null) {
 				vis = new Vis();
 				vis.setRange(-0.1, -0.1, 1.1, 2.2);
+			} else {
+				vis.clear();
 			}
-			vis.clear();
 			vis.g.setColor(Color.blue);
 			double x1 = lx.getDouble(), x2 = ux.getDouble(), y1 = ly.getDouble(), y2 = uy.getDouble();
 			vis.g.draw(vis.segment(x1, y1, x2, y1));
@@ -385,8 +453,11 @@ public class HintSolver extends Solver {
 			}
 			vis.g.setColor(Color.GREEN);
 			for (Border b : border) vis.g.draw(vis.segment(ps[b.p1].x.getDouble(), ps[b.p1].y.getDouble(), ps[b.p2].x.getDouble(), ps[b.p2].y.getDouble()));
-			vis.vis(false);
-//			vis.dispose();
+			vis.vis(debug == 1);
+			if (debug == 1) {
+				vis.dispose();
+				vis = null;
+			}
 		}
 	}
 	

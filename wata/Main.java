@@ -10,13 +10,20 @@ public class Main {
 	public String algo = "FastSolver";
 	
 	@Option(abbr = 'd')
-	public boolean debug = false;
+	public int debug = 0;
 	
 	@Option(abbr = 's')
 	public long seed = 743943;
 	
+	@Option(abbr = 'f', usage = "0: auto, k: k-fold")
+	public int fold = 0;
+	
+	@Option(abbr = 't')
+	public int strategy = 0;
+	
 	void run() throws Exception {
 		System.err.println("Algo = " + algo);
+		System.err.println("Strategy = " + strategy);
 		Scanner sc = new Scanner(System.in);
 		int n = sc.nextInt();
 		P[] ps = new P[n];
@@ -44,6 +51,8 @@ public class Main {
 		}
 		solver.edgesSkeleton = Solver.createEdgeMap(poly);
 		solver.debug = debug;
+		solver.FOLD = fold;
+		solver.strategy = strategy;
 		if (seed == 0) {
 			seed = new Random().nextLong();
 			System.err.printf("Seed = %d%n", seed);
@@ -53,7 +62,10 @@ public class Main {
 		Stat.start("solve");
 		boolean res = solver.solve();
 		Stat.end("solve");
-		Debug.check(res);
+		if (!res) {
+			System.err.println("No solution found.");
+			Debug.check(res);
+		}
 		System.err.println("Succeeded!");
 	}
 	
@@ -63,8 +75,9 @@ public class Main {
 		SetOpt.setOpt(main, args);
 		try {
 			main.run();
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
+			System.err.println("Error!!!!!");
 			System.exit(1);
 		}
 	}

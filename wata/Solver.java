@@ -5,9 +5,11 @@ import tc.wata.util.*;
 
 public abstract class Solver {
 	
-	public boolean debug;
+	public int debug;
 	public Random rand;
 	public Scanner sc;
+	public int FOLD;
+	public int strategy;
 	
 	public P[] psSkeleton;
 	public int[][] polySkeleton;
