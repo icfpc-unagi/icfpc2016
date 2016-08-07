@@ -43,6 +43,15 @@ foreach ($snapshot['users'] as $user) {
 
 ksort($users);
 
+if (!is_null(GetParameter('solution'))) {
+  include_once(dirname(__FILE__) . '/../exec/add_solution.php');
+  $result = AddSolution();
+  if ($result['code'] != 0) {
+    die('Failed to submit: ' . json_encode($result));
+  }
+  header('Location: problem.php?problem_id=' . $problem_id);
+  die('Successfully submitted.');
+}
 
 StartPage();
 
@@ -90,6 +99,11 @@ Draw($data);
 
 ?>
 </td></tr></table>
+<h1>Submit</h1>
+<form action="?problem_id=<?php echo $problem_id; ?>" method="POST">
+<textarea name="solution" style="width:100%;height:200px"></textarea>
+<input type="submit" value="Submit">
+</form>
 <h1 class="page-header">Ranking</h1>
 <table class="layout"><tr><td style="width:65%">
 <h3>Internal</h3>
