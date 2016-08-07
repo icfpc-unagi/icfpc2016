@@ -81,7 +81,7 @@ foreach ($problems as $problem) {
     continue;
   }
   // If the problem is easy, then submit it.
-  if ($problem['solved'] >= 2) {
+  if ($problem['solved'] >= 1) {
     $solution_ids[] = $problem['all']['solution_id'];
     continue;
   }
