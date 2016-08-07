@@ -20,16 +20,16 @@ foreach ($params as $key => $value) {
     $command = $value;
     continue;
   }
-  if ($key == 'stdin') {
-    $input = $value;
-    continue;
-  }
   if (preg_match('%^(.*)_file$%', $key, $match)) {
     $temp = tempnam(sys_get_temp_dir(), 'tmp');
     file_put_contents($temp, $value);
     $files[] = $temp;
     $key = $match[1];
     $value = $temp;
+  }
+  if ($key == 'stdin') {
+    $input = $value;
+    continue;
   }
   if (preg_match('%^arg(\\d+)$%', $key)) {
     $flags .= ' ' . escapeshellarg("$value");
