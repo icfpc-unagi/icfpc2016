@@ -4,11 +4,8 @@
 
 #include "base/base.h"
 #include "boost/multiprecision/gmp.hpp"
-#include "boost/rational.hpp"
 
-using boost::rational;
-using boost::rational_cast;
-
+typedef boost::multiprecision::mpz_int Z;
 typedef boost::multiprecision::number<boost::multiprecision::gmp_rational,
                                       boost::multiprecision::et_off> Q;
 
