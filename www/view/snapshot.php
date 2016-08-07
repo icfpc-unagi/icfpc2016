@@ -31,11 +31,11 @@ StartPage();
 echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
 ?></h1>
 <div><?php
-$compact = !is_null(GetParameter('compact'));
-if ($compact) {
-  echo '[<a href="?">Full</a>]';
+$full = !is_null(GetParameter('full'));
+if ($full) {
+  echo '[<a href="?full=1">Full</a>]';
 } else {
-  echo '[<a href="?compact=1">Compact</a>]';
+  echo '[<a href="?">Compact</a>]';
 }
 ?></div>
 <table class="table table-condensed table-striped">

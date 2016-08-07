@@ -3,7 +3,10 @@
 cd "$(dirname "${BASH_SOURCE}")"
 
 php fetch.php
+
 bazel build -c opt //iwiwi:prefilter
+
+bash summary.sh
 
 pushd problems
 for file in *.txt; do
