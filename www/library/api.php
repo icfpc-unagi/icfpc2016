@@ -195,6 +195,34 @@ function RenderPage($buffer) {
   $output .= '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">';
   $output .= '<style>table.layout { width: 100%; table-layout: fixed } table.layout > tbody > tr > td { padding: 20px; vertical-align: top; } .pending { color: #aaa } </style>';
   $output .= '</head><body>';
+  $output .= '<nav class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="snapshot.php">ICFP Contest 2016</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-collapse">
+          <ul class="nav navbar-nav">
+            
+            <li class="False">
+              <a href="snapshot.php">
+                Leaderboard
+              </a>
+            </li>
+            <li class="False">
+              <a href="list.php">
+                Snapshots
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>';
   $output .= '<div class="container">';
   $output .= "\n$buffer\n";
   $output .= "</div></body></html>\n";
