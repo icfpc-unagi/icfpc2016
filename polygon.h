@@ -26,6 +26,14 @@ struct Vertex {
 
 typedef vector<Vertex> Polygon;
 
+template <typename T>
+void ResolveIndexReference(const vector<int>& index, const vector<T>& ref,
+                           vector<T>* out) {
+  for (int i : index) {
+    out->emplace_back(ref[i]);
+  }
+}
+
 bool is_ccw(const Polygon& p) {
   Q area;
   for (int i = 1; i < p.size(); ++i) {
@@ -56,10 +64,11 @@ Q consume_rational(std::istream& is) {
 
 std::istream& operator>>(std::istream& is, Vertex& v) {
   v.x = consume_rational(is);
-  int c = is.get();
-  if (c != ',') {
-    LOG(ERROR) << "Expected comma but was " << (char)c << ":" << c;
-  }
+  while (is.good() && isspace(is.peek())) is.get();
+  int c = is.peek();
+  LOG_IF(ERROR, c != ',' && !isdigit(c)) << "Expected comma but was " << (char)c
+                                         << ":" << c;
+  if (c == ',') is.get();
   v.y = consume_rational(is);
   return is;
 }
