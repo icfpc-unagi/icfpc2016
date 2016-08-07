@@ -144,19 +144,20 @@ public class SATSolver extends Solver {
 		static final int CONFLICT = 0, UNIT = 1, FOUND = 2;
 		int type; // 0: conflict, 1: unit, 2: found
 		int[] reason;
-		int bi, bj;
+		int p1, p2, i;
 		static Return conflict(int[] reason) {
 			Return ret = new Return();
 			ret.type = 0;
 			ret.reason = reason;
 			return ret;
 		}
-		static Return unit(int[] reason, int bi, int bj) {
+		static Return unit(int[] reason, int p1, int p2, int i) {
 			Return ret = new Return();
 			ret.type = 1;
 			ret.reason = reason;
-			ret.bi = bi;
-			ret.bj = bj;
+			ret.p1 = p1;
+			ret.p2 = p2;
+			ret.i = i;
 			return ret;
 		}
 		static Return found() {
@@ -180,7 +181,7 @@ public class SATSolver extends Solver {
 					int c = canPlace(s, b.poly[i]);
 					if (c != OK) {
 						b.poly[i] = null;
-						b.reason[i] = c == NG_AREA ? null : is(c, b.level);
+						b.reason[i] = (c == NG_AREA) ? null : is(c, b.level);
 					}
 				}
 			}
@@ -239,18 +240,22 @@ public class SATSolver extends Solver {
 			if (ret1.type == Return.UNIT) {
 				Debug.print("unit");
 				if (ret1.reason[ret1.reason.length - 1] >= lastDecision) {
-					s.border[ret1.bi].poly[ret1.bj] = null;
-					s.border[ret1.bi].reason[ret1.bj] = ret1.reason;
+					for (SATBorder a : s.border) if (a.p1 == ret1.p1 && a.p2 == ret1.p2) {
+						a.poly[ret1.i] = null;
+						a.reason[ret1.i] = ret1.reason;
+					}
 					return rec(s, lastDecision);
 				}
+				return ret1;
 			}
 			if (!contains(ret1.reason, s.poly.length + 1)) return ret1;
 			ret1.reason = insert(ret1.reason, b.level);
 		} else {
 			ret1 = Return.conflict(insert(r1 == NG_AREA ? null : is(r1, b.level), s.poly.length + 1));
 		}
-		if (ret1.reason != null && ret1.reason[ret1.reason.length - 1] >= 1 && ret1.reason[ret1.reason.length - 1] < lastDecision) {
-//			return Return.unit(ret1.reason, bi, bj);
+		Debug.print(ret1.reason, lastDecision);
+		if (ret1.reason != null && ret1.reason[ret1.reason.length - 2] >= 1 && ret1.reason[ret1.reason.length - 2] < lastDecision) {
+			return Return.unit(copyOf(ret1.reason, ret1.reason.length - 1), b.p1, b.p2, bj);
 		}
 		if (debug > 0) s.vis();
 		int r2 = canPlace(s, b.poly[1 - bj]);
@@ -261,10 +266,13 @@ public class SATSolver extends Solver {
 			if (ret2.type == Return.UNIT) {
 				Debug.print("unit");
 				if (ret2.reason[ret2.reason.length - 1] >= lastDecision) {
-					s.border[ret2.bi].poly[ret2.bj] = null;
-					s.border[ret2.bi].reason[ret2.bj] = ret2.reason;
+					for (SATBorder a : s.border) if (a.p1 == ret2.p1 && a.p2 == ret2.p2) {
+						a.poly[ret2.i] = null;
+						a.reason[ret2.i] = ret2.reason;
+					}
 					return rec(s, lastDecision);
 				}
+				return ret2;
 			}
 			if (!contains(ret2.reason, s.poly.length + 1)) return ret2;
 			ret2.reason = insert(ret2.reason, b.level);
@@ -307,8 +315,7 @@ public class SATSolver extends Solver {
 	
 	int[] is(int...is) {
 		sort(is);
-		is = Utils.unique(is);
-		return is;
+		return Utils.unique(is);
 	}
 	
 	boolean contains(int[] reason, int level) {

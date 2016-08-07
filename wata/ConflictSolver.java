@@ -193,6 +193,7 @@ public class ConflictSolver extends Solver {
 //			Debug.check(canPlace(s, b.poly[0]));
 //			Debug.check(canPlace(s, b.poly[1]));
 			double score = score(s, b.poly[0], Utils.pair(s.cor[b.p1], s.cor[b.p2]));
+			if (strategy == 2 && !b.fold[0]) score += 0.1;
 			if (maxScore < score) {
 				maxScore = score;
 				p1 = b.poly[0];
@@ -202,6 +203,7 @@ public class ConflictSolver extends Solver {
 				level = b.level;
 			}
 			score = score(s, b.poly[1], Utils.pair(s.cor[b.p1], s.cor[b.p2]));
+			if (strategy == 2 && !b.fold[1]) score += 0.1;
 			if (maxScore < score) {
 				maxScore = score;
 				p1 = b.poly[1];
@@ -215,6 +217,7 @@ public class ConflictSolver extends Solver {
 			maxArea = s.usedArea;
 			System.err.printf("%.2f%% filled%n", maxArea.getDouble2() * 100.0);
 		}
+		if (debug == 1) Debug.print(maxScore);
 		if (debug > 0) s.vis();
 		int r1 = canPlace(s, p1);
 		int[] reason1;
@@ -272,6 +275,13 @@ public class ConflictSolver extends Solver {
 	}
 	
 	int[] getReason(int reason, int bl, int level) {
+		if (reason == NG_AREA) return null;
+		int[] a = new int[]{reason, bl, level};
+		sort(a);
+		return Utils.unique(a);
+	}
+	
+	int[] getReason2(int reason, int bl, int level) {
 		if (reason == NG_AREA) return null;
 		int[] a = Utils.unique(new int[]{reason, bl, level});
 		sort(a);
@@ -362,8 +372,16 @@ public class ConflictSolver extends Solver {
 	}
 	
 	double score(State s, Poly poly, long foldE) {
-		if (s.used[poly.pid] == 0) return 1;
-		return 0;
+		if (strategy == 0) {
+			if (s.used[poly.pid] == 0) return 1;
+			return 0;
+		} else if (strategy == 1) {
+			if (s.used[poly.pid] == 0) return 1 + (10 - poly.bb.minX) / 10.0;
+			return (10 - poly.bb.minX) / 10.0;
+		} else {
+			if (s.used[poly.pid] == 0) return 1;
+			return 0;
+		}
 	}
 	
 	int get(Map<Long, Integer> map, long key) {

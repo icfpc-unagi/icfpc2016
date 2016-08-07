@@ -7,7 +7,7 @@ public class SATBorder {
 	
 	public Poly[] poly = new Poly[2];
 	public boolean[] fold;
-	public int[][] reason = new int[2][];
+	public int[][] reason;
 	
 	public SATBorder(int p1, int p2, P q1, P q2, int level) {
 		this.p1 = p1;
@@ -17,6 +17,7 @@ public class SATBorder {
 		bb.update(q2.x.getDouble(), q2.y.getDouble());
 		fold = new boolean[2];
 		this.level = level;
+		reason = new int[][]{{-1, level}, {-1, level}};
 	}
 	
 	public SATBorder(SATBorder b) {
