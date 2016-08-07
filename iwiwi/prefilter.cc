@@ -207,7 +207,7 @@ void Verify() {
 //
 
 int main(int argc, char **argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv);
 
   Input();
   SegmentArrangement();

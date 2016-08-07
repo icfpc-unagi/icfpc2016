@@ -5,6 +5,8 @@ function Prettify($data) {
 }
 
 date_default_timezone_set('Asia/Tokyo');
+ini_set('memory_limit', '1G');
+
 $path = dirname(__FILE__) . '/snapshot.json';
 file_put_contents($path,
     Prettify(file_get_contents('http://db.sx9.jp/view/snapshot.php?plain=1')));

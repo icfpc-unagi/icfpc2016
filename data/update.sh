@@ -14,4 +14,4 @@ for file in *.txt; do
 done
 popd
 
-git add problems/*.txt problems_converted/*.txt
+git add problems/*.txt problems_converted/*.txt ../www/summary/*.png

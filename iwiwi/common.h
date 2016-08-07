@@ -16,6 +16,8 @@
 #include <sstream>
 #include <fstream>
 
+#include "base/base.h"
+
 #include <boost/assert.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
@@ -26,8 +28,6 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/gmp.hpp>
 #include <boost/geometry/algorithms/area.hpp>
-
-#include <gflags/gflags.h>
 
 #define all(c) (c).begin(), (c).end()
 #define iter(c) __typeof((c).begin())
