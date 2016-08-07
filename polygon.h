@@ -58,7 +58,7 @@ Q consume_rational(std::istream& is) {
       break;
     }
   }
-  CHECK(is.good()) << buf;
+  CHECK(!buf.empty());
   return Q(buf);
 }
 

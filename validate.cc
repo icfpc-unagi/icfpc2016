@@ -77,13 +77,11 @@ int main(int argc, char** argv) {
   VLOG(2) << "Loading file " << FLAGS_problem;
   Problem problem;
   std::ifstream problem_ifs(FLAGS_problem);
-  CHECK(ReadProblem(problem_ifs, &problem)) << "Failed to load file "
-                                            << FLAGS_problem;
+  ReadProblem(problem_ifs, &problem);
   VLOG(2) << "Loading file " << FLAGS_solution;
   Solution solution;
   std::ifstream solution_ifs(FLAGS_solution);
-  CHECK(ReadSolution(solution_ifs, &solution)) << "Failed to load file "
-                                               << FLAGS_solution;
+  ReadSolution(solution_ifs, &solution);
   VLOG(2) << "Files loaded";
 
   // edge (normalized pair of vertex ids) to facet ids

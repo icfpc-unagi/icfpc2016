@@ -27,14 +27,14 @@ int main(int argc, char** argv) {
   Problem problem;
   FilteredProblem filtered_problem;
   if (FLAGS_filtered) {
-    CHECK(ReadFilteredProblem(ifs, &filtered_problem));
+    ReadFilteredProblem(ifs, &filtered_problem);
     problem.polygons.resize(filtered_problem.polygons.size());
     for (int i = 0; i < filtered_problem.polygons.size(); ++i) {
       ResolveIndexReference(filtered_problem.polygons[i],
                             filtered_problem.vertices, &problem.polygons[i]);
     }
   } else {
-    CHECK(ReadProblem(ifs, &problem));
+    ReadProblem(ifs, &problem);
   }
 
   // viewbox size
