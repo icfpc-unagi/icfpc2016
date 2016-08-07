@@ -21,6 +21,9 @@ public class Main {
 	@Option(abbr = 't')
 	public int strategy = 0;
 	
+	@Option(abbr = 'b')
+	public int bit;
+	
 	void run() throws Exception {
 		System.err.println("Algo = " + algo);
 		System.err.println("Strategy = " + strategy);
@@ -53,6 +56,7 @@ public class Main {
 		solver.debug = debug;
 		solver.FOLD = fold;
 		solver.strategy = strategy;
+		solver.bit = bit;
 		if (seed == 0) {
 			seed = new Random().nextLong();
 			System.err.printf("Seed = %d%n", seed);

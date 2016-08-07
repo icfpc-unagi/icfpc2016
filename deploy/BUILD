@@ -23,3 +23,8 @@ deploy(
     name = "wata_strong",
     binary = "//ai/wata:wata_strong.ar",
 )
+
+deploy(
+    name = "wata_conflict",
+    binary = "//ai/wata:wata_conflict.ar",
+)

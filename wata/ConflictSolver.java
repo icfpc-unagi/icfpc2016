@@ -246,6 +246,10 @@ public class ConflictSolver extends Solver {
 	
 	int canPlace(State s, Poly poly) {
 		for (P p : poly.ps) {
+			if (p.x.den.bitCount() > bit) return NG_OUTSIDE;
+			if (p.y.den.bitCount() > bit) return NG_OUTSIDE;
+		}
+		for (P p : poly.ps) {
 			if (p.x.compareTo(lx) < 0 || p.x.compareTo(ux) > 0) return NG_OUTSIDE;
 			if (p.y.compareTo(ly) < 0 || p.y.compareTo(uy) > 0) return NG_OUTSIDE;
 		}

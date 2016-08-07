@@ -10,6 +10,7 @@ public abstract class Solver {
 	public Scanner sc;
 	public int FOLD;
 	public int strategy;
+	public int bit;
 	
 	public P[] psSkeleton;
 	public int[][] polySkeleton;
