@@ -57,7 +57,7 @@ $files[] = $return;
 exec("timeout 10s /alloc/global/bin/$command$flags < $stdin >$stdout 2>$stderr; echo \$? > $return");
 echo json_encode([
     'command' => "$command$flags",
-    'debug' => isset($_POST['debug']) . $options,
+    'debug' => isset($_POST['debug']) ? $options : NULL,
     'stdout' => file_get_contents($stdout),
     'stderr' => file_get_contents($stderr),
     'code' => intval(file_get_contents($return))]) . "\n";
