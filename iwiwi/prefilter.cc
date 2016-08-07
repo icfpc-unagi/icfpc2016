@@ -1,5 +1,7 @@
 #include "common.h"
 
+DEFINE_bool(ignore_irrational, false, "");
+
 /*
 Polygon ReadPolygon(istream &is) {
   int num_points;
@@ -95,6 +97,11 @@ void SegmentArrangement() {
     rep (j, coords.size()) {
       const auto &p = coords[j];
       if (bg::intersects(p, s)) {
+        if (FLAGS_ignore_irrational) {
+          Bigrat t2 = SqrDistance(s.first, p) / SqrDistance(s.first, s.second);
+          if (!IsSqr(t2)) continue;
+        }
+
         ps.emplace_back(make_pair(bg::comparable_distance(s.first, p), j));
       }
     }
@@ -199,7 +206,9 @@ void Verify() {
 // Entry point
 //
 
-int main() {
+int main(int argc, char **argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   Input();
   SegmentArrangement();
   //PrintGraph();

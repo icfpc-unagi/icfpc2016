@@ -27,6 +27,8 @@
 #include <boost/multiprecision/gmp.hpp>
 #include <boost/geometry/algorithms/area.hpp>
 
+#include <gflags/gflags.h>
+
 #define all(c) (c).begin(), (c).end()
 #define iter(c) __typeof((c).begin())
 #define cpresent(c, e) (find(all(c), (e)) != (c).end())
@@ -75,6 +77,34 @@ inline string ReadAllAndRemoveComma(istream &is) {
   return in;
 }
 
+inline Bigrat Sqr(Bigrat x) {
+  return x * x;
+}
+
+inline Bignum Sqrt(Bignum x, Bignum &r) {
+  Bignum s;
+  s = bm::sqrt(x, r);
+
+  for (int dif = -2; dif <= 2; ++dif) {
+    if (s + dif < 0) continue;
+    Bignum ts = s + dif;
+    if (ts * ts == x) {
+      r = 0;
+      return ts;
+    }
+  }
+  return s;
+}
+
+inline bool IsSqr(Bigrat x) {
+  Bignum r;
+  Sqrt(numerator(x), r);
+  if (r != 0) return false;
+  Sqrt(denominator(x), r);
+  if (r != 0) return false;
+  return true;
+}
+
 inline Point ReadPoint(istream &is) {
   Bigrat x, y;
   is >> x >> y;
@@ -95,6 +125,10 @@ inline int Quadrant(const Point &p) {
 
 inline Bigrat Det(const Point &a, const Point &b) {
   return a.x() * b.y() - a.y() * b.x();
+}
+
+inline Bigrat SqrDistance(const Point &a, const Point &b) {
+  return Sqr(a.x() - b.x()) + Sqr(a.y() - b.y());
 }
 
 // NOTE: it returns all the regions, including outer one!
