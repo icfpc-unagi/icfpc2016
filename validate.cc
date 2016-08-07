@@ -184,23 +184,27 @@ int main(int argc, char** argv) {
   bg::sym_difference(silhouette, dst_mpoly, diff);
   if (!bg::area(diff).is_zero()) {
     LOG(WARNING) << "Destionation silhouette doesn't match.";
-    ccwMultiPolygon diff1, diff2;
+    ccwMultiPolygon diff1, diff2, inters;
     bg::difference(silhouette, dst_mpoly, diff1);
     bg::difference(dst_mpoly, silhouette, diff2);
+    bg::intersection(silhouette, dst_mpoly, inters);
     if (FLAGS_show_figure) {
       using RealPoint = bg::model::d2::point_xy<double>;
       bg::model::multi_polygon<bg::model::polygon<RealPoint, false, false>>
-          real_diff1, real_diff2;
+          real_diff1, real_diff2, real_inters;
       bg::convert(diff1, real_diff1);
       bg::convert(diff2, real_diff2);
+      bg::convert(inters, real_inters);
       bg::model::box<RealPoint> rect = {{0, 0}, {1, 1}};
       bg::svg_mapper<RealPoint> mapper(
           std::cout, 1000, 1000,
           R"(width="400px" height="400px" viewBox="0 0 1000 1000")");
       mapper.add(rect);
+      mapper.add(real_inters);
       mapper.add(real_diff1);
       mapper.add(real_diff2);
       mapper.map(rect, "fill:none;stroke:blue;stroke-width:5");
+      mapper.map(real_inters, "fill:none;stroke:yellowgreen;stroke-width:2");
       mapper.map(real_diff1, "fill:turquoise");
       mapper.map(real_diff2, "fill:tomato");
     }
