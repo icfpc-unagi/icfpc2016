@@ -10,11 +10,13 @@ $params = $_REQUEST;
 foreach ($_FILES as $key => $value) {
   $params[$key] = file_get_contents($value['temp_name']);
 }
+unset($params['debug']);
 ksort($params);
 $files = [];
 $command = '';
 $input = '';
 $flags = '';
+$options = [];
 foreach ($params as $key => $value) {
   if ($key == 'command') {
     $command = $value;
@@ -22,6 +24,7 @@ foreach ($params as $key => $value) {
   }
   if (preg_match('%^(.*)_file$%', $key, $match)) {
     $temp = tempnam(sys_get_temp_dir(), 'tmp');
+    $options[$temp] = $value;
     file_put_contents($temp, $value);
     $files[] = $temp;
     $key = $match[1];
@@ -54,6 +57,7 @@ $files[] = $return;
 exec("timeout 10s /alloc/global/bin/$command$flags < $stdin >$stdout 2>$stderr; echo \$? > $return");
 echo json_encode([
     'command' => "$command$flags",
+    'debug' => isset($_POST['debug']) . $options,
     'stdout' => file_get_contents($stdout),
     'stderr' => file_get_contents($stderr),
     'code' => intval(file_get_contents($return))]) . "\n";
