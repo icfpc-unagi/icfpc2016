@@ -1,0 +1,19 @@
+#!/bin/bash
+# submit_solution submits a solution in ICFPC 2016.
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
+DEFINE_string problem '' 'Path for problem.'
+DEFINE_bool filtered false 'Set true if the input is prefiltered.'
+eval "${IMOSH_INIT}"
+
+if [ "${FLAGS_problem}" == '' ]; then
+  LOG FATAL '--problem is required.'
+fi
+
+curl --dump-header - --silent \
+     -H 'Expect: ' \
+     -F 'debug=1' \
+     -F 'command=problem' \
+     -F "input_file=@${FLAGS_problem}" \
+   'http://db.sx9.jp/exec.php' | \
+php "$(dirname "${BASH_SOURCE}")/library/parse.php"
