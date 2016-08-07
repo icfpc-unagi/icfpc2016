@@ -18,14 +18,10 @@ foreach ($snapshot['users'] as $user) {
 
 ksort($users);
 
-?><html>
-<meta charset="UTF-8">
-<title>Snapshot at <?php
-echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
-?></title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<body>
-<h1>Problems at <?php
+StartPage();
+
+?>
+<h1 class="page-header">Problems at <?php
 echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
 ?></h1>
 <div><?php
@@ -36,8 +32,9 @@ if ($compact) {
   echo '[<a href="?compact=1">Compact</a>]';
 }
 ?></div>
-<table>
-<tr><td>ID</td><td>Owner</td><td>Problem Size</td><td>Owner's Solution Size</td><td>Solved</td><td>Solutions</td><td>Publish Time</td></tr>
+<table class="table table-condensed table-striped">
+  <tbody>
+<tr><th>ID</th><th>Owner</th><th>Problem Size</th><th>Owner's Solution Size</th><th>Solved</th><th>Solutions</th><th>Publish Time</th></tr>
 <?php
 
 $solutions = [];
@@ -93,14 +90,14 @@ foreach ($snapshot['problems'] as $problem) {
   } else if ($solution['submitted']['solution_resemblance'] == 1.0) {
     echo '<b>Solved</b>';
   } else if ($solution['all']['solution_resemblance'] == 1.0) {
-    echo '<b style="color:#888">Solved</b>';
+    echo '<b style="color:red">Solved</b>';
   } else if ($solution['submitted']['solution_resemblance'] ==
              $solution['all']['solution_resemblance']) {
     echo $solution['submitted']['solution_resemblance'];
   } else if (is_null($solution['all']['solution_resemblance'])) {
     echo '??????';
   } else {
-    echo '<span style="color:#888">(' .
+    echo '<span style="color:red">(' .
          $solution['all']['solution_resemblance'] . ')</span>';
   }
   echo '</a></td>';
@@ -110,9 +107,10 @@ foreach ($snapshot['problems'] as $problem) {
 
 ?>
 </table>
-<h1>Leaderboard</h1>
-<table>
-<tr><td>Rank</td><td>Team name</td><td>Score</td></tr>
+<h1 class="page-header">Leaderboard</h1>
+<table class="table table-condensed table-striped">
+  <tbody>
+<tr><th>Rank</th><th>Team name</th><th>Score</th></tr>
 <?php
 
 $rank = 1;
