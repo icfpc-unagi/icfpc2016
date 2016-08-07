@@ -7,6 +7,9 @@ function Fail($status, $message) {
 }
 
 $params = $_REQUEST;
+foreach ($_FILES as $key => $value) {
+  $params[$key] = file_get_contents($value['temp_name']);
+}
 ksort($params);
 $files = [];
 $command = '';
