@@ -24,6 +24,8 @@ foreach ($snapshot['users'] as $user) {
 
 ksort($users);
 
+$full = !is_null(GetParameter('full'));
+
 StartPage();
 
 ob_start();
@@ -132,7 +134,6 @@ echo ' （全' . $num_problems . '問中ステルス' . $stealth . '問）';
 
 ?></h1>
 <div><?php
-$full = !is_null(GetParameter('full'));
 if (!$full) {
   echo '[<a href="?full=1">Full</a>]';
 } else {
