@@ -43,3 +43,29 @@ void WriteProblem(const Problem& p, std::ostream& os) {
     os << seg.first << ' ' << seg.second << '\n';
   }
 }
+
+struct FilteredProblem {
+  vector<Vertex> vertices;
+  vector<vector<int>> polygons;
+};
+
+bool ReadFilteredProblem(std::istream& is, FilteredProblem* p) {
+  int n_verts;
+  is >> n_verts;
+  p->vertices.resize(n_verts);
+  for (int i = 0; i < n_verts; ++i) {
+    is >> p->vertices[i];
+  }
+  int n_polys;
+  is >> n_polys;
+  p->polygons.resize(n_polys);
+  for (int i = 0; i < n_polys; ++i) {
+    int n;
+    is >> n;
+    p->polygons[i].resize(n);
+    for (int j = 0; j < n; ++j) {
+      is >> p->polygons[i][j];
+    }
+  }
+  return is.good();
+}

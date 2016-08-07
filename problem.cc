@@ -14,6 +14,7 @@ DEFINE_bool(expand_viewbox, true,
 DEFINE_bool(shrink_viewbox, true,
             "Shrink viewbox to fit silhouette and hide the original rect.");
 DEFINE_string(input, "/dev/stdin", "input problem file");
+DEFINE_bool(filtered, false, "set if input is filtered by prefilter");
 
 using boost::rational;
 using boost::rational_cast;
@@ -24,7 +25,17 @@ int main(int argc, char** argv) {
 
   std::ifstream ifs(FLAGS_input);
   Problem problem;
-  ReadProblem(ifs, &problem);
+  FilteredProblem filtered_problem;
+  if (FLAGS_filtered) {
+    CHECK(ReadFilteredProblem(ifs, &filtered_problem));
+    problem.polygons.resize(filtered_problem.polygons.size());
+    for (int i = 0; i < filtered_problem.polygons.size(); ++i) {
+      ResolveIndexReference(filtered_problem.polygons[i],
+                            filtered_problem.vertices, &problem.polygons[i]);
+    }
+  } else {
+    CHECK(ReadProblem(ifs, &problem));
+  }
 
   // viewbox size
   Q min_x = 0, min_y = 0, max_x = 1, max_y = 1;
@@ -87,6 +98,13 @@ int main(int argc, char** argv) {
         R"(<path d="M%.3f %.3fL%.3f %.3f"/>)", e.first.x.convert_to<double>(),
         e.first.y.convert_to<double>(), e.second.x.convert_to<double>(),
         e.second.y.convert_to<double>());
+  }
+  printf("</g>");
+  for (int i = 0; i < filtered_problem.vertices.size(); ++i) {
+    printf(
+        R"(<circle id="v%d" fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)", i,
+        filtered_problem.vertices[i].x.convert_to<double>(),
+        filtered_problem.vertices[i].y.convert_to<double>());
   }
   printf("</g></svg>");
 
