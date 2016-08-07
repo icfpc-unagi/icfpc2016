@@ -67,6 +67,10 @@ int main(int argc, char** argv) {
       e.second.x -= min_x;
       e.second.y -= min_y;
     }
+    for (auto& v : filtered_problem.vertices) {
+      v.x -= min_x;
+      v.y -= min_y;
+    }
     LOG(INFO) << "Translate " << min_x << "," << min_y;
     max_x -= min_x;
     max_y -= min_y;
