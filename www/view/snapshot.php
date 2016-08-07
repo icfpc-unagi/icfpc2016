@@ -56,6 +56,8 @@ foreach (Database::Select('
 }
 
 $not_solved = 0;
+$stealth = 0;
+$num_problems = 0;
 foreach ($snapshot['problems'] as $problem) {
   $solved = 0;
   $resemblance = 0.0;
@@ -67,6 +69,13 @@ foreach ($snapshot['problems'] as $problem) {
     }
   }
   $solution = $solutions[intval($problem['problem_id'])];
+  if ($solution['all']['solution_resemblance'] == 1 &&
+      $solution['submitted']['solution_resemblance'] != 1) {
+    $stealth++;
+  }
+  if ($problem['owner'] != '42') {
+    $num_problems++;
+  }
   if ($solution['all']['solution_resemblance'] == 1 ||
       $problem['owner'] == '42') {
     if (!$full) continue;
@@ -118,6 +127,9 @@ $contents = ob_get_clean();
 <div style="font-size:400%;font-weight:bold;text-align:center;">☆☆☆　全完まで<?php echo $not_solved; ?>問！　☆☆☆</div>
 <h1 class="page-header">Problems at <?php
 echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
+
+echo ' （全' . $num_problems . '問中ステルス' . $stealth . '問）';
+
 ?></h1>
 <div><?php
 $full = !is_null(GetParameter('full'));
