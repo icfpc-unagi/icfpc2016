@@ -69,6 +69,17 @@ echo '<tr><th>Problem Size</th><td>' . $problem['problem_size'] . "</td></tr>\n"
 echo '<tr><th>Solution Size</th><td>' . $problem['solution_size'] . "</td></tr>\n";
 ?>
 <tr><th>Data</th><td><textarea style="width:100%;height:100px;font-size:100%;font-family:monospace"><?php echo htmlspecialchars($data); ?></textarea></td></tr>
+<tr><th>Prefiltered</th><td><textarea style="width:100%;height:100px;font-size:100%;font-family:monospace"><?php
+
+$prefilter = Execute([
+    'command' => 'prefilter',
+    'stdin' => $data]);
+if ($prefilter['code'] !== 0) {
+  die('Failed to run prefilter: ' . json_encode($prefilter));
+}
+
+echo htmlspecialchars($prefilter['stdout']);
+?></textarea></td></tr>
 <tr><th>Links</th><td><a href="hint.php?problem_id=<?php echo $problem['problem_id']; ?>">Hint maker</a></td></tr>
 </table>
 </td><td style="padding:20px;vertical-algin:top;">

@@ -10,7 +10,9 @@ bash summary.sh
 
 pushd problems
 for file in *.txt; do
-  ../../bazel-bin/iwiwi/prefilter < $file > ../problems_converted/$file
+  if [ ! -s ../problems_converted/$file ]; then
+    ../../bazel-bin/iwiwi/prefilter < $file > ../problems_converted/$file
+  fi
 done
 popd
 
