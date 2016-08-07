@@ -193,7 +193,7 @@ function RenderPage($buffer) {
   $output = '<!doctype html><html><head><meta charset="UTF-8">';
   $output .= '<title>ICFPC 2016</title>';
   $output .= '<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">';
-  $output .= '<style>table.layout { width: 100%; table-layout: fixed } table.layout > tbody > tr > td { padding: 20px; vertical-align: top; } .pending { color: #aaa } </style>';
+  $output .= '<style>table.layout { width: 100%; table-layout: fixed } table.layout > tbody > tr > td { padding: 20px; vertical-align: top; } .pending { color: #aaa } .navbar-default { background-color: #def; border-color: #abc; } </style>';
   $output .= '</head><body>';
   $output .= '<nav class="navbar navbar-default">
       <div class="container">
