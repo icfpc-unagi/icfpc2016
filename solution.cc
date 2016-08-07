@@ -15,6 +15,8 @@ DEFINE_bool(shrink_viewbox, false,
             "Shrink viewbox to fit silhouette and hide the original rect.");
 DEFINE_string(input, "/dev/stdin", "input solution file");
 
+namespace bm = boost::multiprecision;
+
 using boost::rational;
 using boost::rational_cast;
 using namespace std;
@@ -53,6 +55,7 @@ int main(int argc, char** argv) {
     }
   }
   vector<int> perimeter_path;
+  set<int> angles;
   pair<Q, Q> p(0, 0);
   do {
     auto it = src_perimeter_map.find(p);
@@ -61,9 +64,15 @@ int main(int argc, char** argv) {
       perimeter_path.clear();
       break;
     }
-    perimeter_path.push_back(it->second);
-    p.first = solution.src_verts[it->second].x;
-    p.second = solution.src_verts[it->second].y;
+    int i = it->second;
+    const Q& x = solution.src_verts[i].x;
+    const Q& y = solution.src_verts[i].y;
+    perimeter_path.push_back(i);
+    if (bm::denominator(x) == 1 && bm::denominator(y) == 1) {
+      angles.insert(i);
+    }
+    p.first = x;
+    p.second = y;
   } while (p.first != 0 || p.second != 0);
 
   // viewbox size
@@ -144,9 +153,14 @@ int main(int argc, char** argv) {
   }
   for (int i = 0; i < solution.dst_verts.size(); ++i) {
     printf(
-        R"(<circle fill="black" cx="%.3f" cy="%.3f" r="0.008"/>)",
+        R"(<circle fill="black" cx="%.3f" cy="%.3f" r=".008"/>)",
         solution.dst_verts[i].x.convert_to<double>(),
         solution.dst_verts[i].y.convert_to<double>());
+  }
+  for (int i : angles) {
+    printf(R"(<circle fill="magenta" cx="%.3f" cy="%.3f" r=".008"/>)",
+           solution.dst_verts[i].x.convert_to<double>(),
+           solution.dst_verts[i].y.convert_to<double>());
   }
   printf("</g></svg>");
 
