@@ -145,7 +145,9 @@ foreach (Database::Select('
       `solution_lock`,
       `solution_created`
     FROM `solution`
-    WHERE `problem_id` = {problem_id}
+    WHERE `problem_id` = {problem_id} AND
+          `solution_data` IS NOT NULL AND
+          `solution_data` <> ""
     ORDER BY
       `solution_resemblance` DESC,
       `solution_size`,
