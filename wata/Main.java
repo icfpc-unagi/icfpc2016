@@ -22,7 +22,7 @@ public class Main {
 	public int strategy = 0;
 	
 	@Option(abbr = 'b')
-	public int bit;
+	public int bit = 0;
 	
 	void run() throws Exception {
 		System.err.println("Algo = " + algo);
