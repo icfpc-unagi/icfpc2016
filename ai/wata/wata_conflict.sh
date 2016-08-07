@@ -9,6 +9,6 @@ else
 fi
 
 "${BASE_DIR}/iwiwi/prefilter" |
-java -jar "${BASE_DIR}/wata/wata_deploy.jar" -a ConflictSolver |
+java -jar "${BASE_DIR}/wata/wata_deploy.jar" -a ConflictSolver "$@" |
 "${BASE_DIR}/iwiwi/postfilter1" |
 "${BASE_DIR}/iwiwi/postfilter2"
