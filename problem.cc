@@ -5,8 +5,7 @@
 #include <fstream>
 
 #include "base/base.h"
-#include "boost/multiprecision/cpp_int.hpp"
-#include "boost/rational.hpp"
+#include <boost/multiprecision/gmp.hpp>
 #include "polygon.h"
 
 DEFINE_bool(expand_viewbox, true,
@@ -16,9 +15,21 @@ DEFINE_bool(shrink_viewbox, true,
 DEFINE_string(input, "/dev/stdin", "input problem file");
 DEFINE_bool(filtered, false, "set if input is filtered by prefilter");
 
+namespace bm = boost::multiprecision;
+
 using boost::rational;
 using boost::rational_cast;
 using namespace std;
+
+bool is_rational_distance(Q x, Q y) {
+  Q norm = x * x + y * y;
+  Z r, n = bm::numerator(norm), d = bm::denominator(norm);
+  bm::sqrt(n, r);
+  if (!r.is_zero()) return false;
+  bm::sqrt(d, r);
+  if (!r.is_zero()) return false;
+  return true;
+}
 
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv);
@@ -96,10 +107,13 @@ int main(int argc, char** argv) {
     printf("Z");
   }
   printf(
-      R"("/><g fill="none" stroke="purple" stroke-width="0.003">)");
+      R"("/><g fill="none">)");
   for (const auto& e : problem.skelton) {
+    bool is_rational =
+        is_rational_distance(e.second.x - e.first.x, e.second.y - e.first.y);
     printf(
-        R"(<path d="M%.3f %.3fL%.3f %.3f"/>)", e.first.x.convert_to<double>(),
+        R"(<path stroke="%s" stroke-width=".003" d="M%.3f %.3fL%.3f %.3f"/>)",
+        is_rational ? "purple" : "gray", e.first.x.convert_to<double>(),
         e.first.y.convert_to<double>(), e.second.x.convert_to<double>(),
         e.second.y.convert_to<double>());
   }
