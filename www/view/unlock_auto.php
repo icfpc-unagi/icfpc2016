@@ -96,6 +96,10 @@ foreach ($solution_ids as $key => $value) {
   if (!$value) unset($solution_ids[$key]);
 }
 
+if (count($solution_ids) == 0) {
+  die("0\n");
+}
+
 Database::Command('
     UPDATE `solution`
     SET `solution_lock` = UNIX_TIMESTAMP()
