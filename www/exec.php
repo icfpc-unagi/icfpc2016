@@ -8,7 +8,7 @@ function Fail($status, $message) {
 
 $params = $_REQUEST;
 foreach ($_FILES as $key => $value) {
-  $params[$key] = file_get_contents($value['temp_name']);
+  $params[$key] = file_get_contents($value['tmp_name']);
 }
 unset($params['debug']);
 ksort($params);
