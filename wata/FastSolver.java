@@ -55,7 +55,11 @@ public class FastSolver extends Solver {
 			}
 		}
 		Collections.shuffle(plist, rand);
-		for (Poly p : plist) if (rec(place(s, p))) return true;
+		int count = 0;
+		for (Poly p : plist) {
+			System.err.printf("%d / %d%n", count++, plist.size());
+			if (rec(place(s, p))) return true;
+		}
 		return false;
 	}
 	
@@ -83,6 +87,9 @@ public class FastSolver extends Solver {
 						b.poly[i] = null;
 					}
 				}
+//				if (b.poly[i] != null && s.used[b.poly[i].pid] > 0 && s.usedArea().add(areas[b.poly[i].pid]).add(s.remainingArea()).compareTo(R.ONE) > 0) {
+//					b.poly[i] = null;
+//				}
 			}
 			if (b.poly[0] == null && b.poly[1] == null) return false;
 		}

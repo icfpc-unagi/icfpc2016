@@ -13,6 +13,7 @@ public class R implements Comparable<R> {
 	public static final R ZERO = new R(0);
 	public static final R ONE = new R(1);
 	public static final R TWO = new R(2);
+	public static final BigInteger MUL = BigInteger.valueOf(1000000000000000L);
 	
 	public BigInteger num, den;
 	public R(BigInteger num, BigInteger den) {
@@ -104,5 +105,8 @@ public class R implements Comparable<R> {
 	}
 	public double getDouble() {
 		return num.doubleValue() / den.doubleValue();
+	}
+	public double getDouble2() {
+		return num.multiply(MUL).divide(den).doubleValue() * 1e-15;
 	}
 }

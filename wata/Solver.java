@@ -7,10 +7,12 @@ public abstract class Solver {
 	
 	public boolean debug;
 	public Random rand;
+	public Scanner sc;
 	
 	public P[] psSkeleton;
 	public int[][] polySkeleton;
 	public R[] areas;
+	public double[] areasDouble;
 	public Map<Long, Long> edgesSkeleton;
 	
 	public abstract boolean solve();

@@ -16,6 +16,7 @@ public class Main {
 	public long seed = 743943;
 	
 	void run() throws Exception {
+		System.err.println("Algo = " + algo);
 		Scanner sc = new Scanner(System.in);
 		int n = sc.nextInt();
 		P[] ps = new P[n];
@@ -34,10 +35,12 @@ public class Main {
 		solver.polySkeleton = poly;
 		solver.psSkeleton = ps;
 		solver.areas = new R[poly.length];
+		solver.areasDouble = new double[poly.length];
 		for (int i = 0; i < poly.length; i++) {
 			P[] qs = new P[poly[i].length];
 			for (int j = 0; j < qs.length; j++) qs[j] = ps[poly[i][j]];
 			solver.areas[i] = P.area(qs);
+			solver.areasDouble[i] = solver.areas[i].getDouble();
 		}
 		solver.edgesSkeleton = Solver.createEdgeMap(poly);
 		solver.debug = debug;
@@ -46,6 +49,7 @@ public class Main {
 			System.err.printf("Seed = %d%n", seed);
 		}
 		solver.rand = new Random(seed);
+		solver.sc = sc;
 		Stat.start("solve");
 		boolean res = solver.solve();
 		Stat.end("solve");
