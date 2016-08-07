@@ -221,8 +221,8 @@ public class ConflictSolver extends Solver {
 		if (r1 == OK) {
 			reason1 = rec(place(s, p1, e1));
 			if (found) return null;
-			reason1 = insert(reason1, level);
 			if (!contains(reason1, s.poly.length + 1)) return reason1;
+			reason1 = insert(reason1, level);
 		} else {
 			reason1 = getReason(r1, level, s.poly.length + 1);
 		}
@@ -232,8 +232,8 @@ public class ConflictSolver extends Solver {
 		if (r2 == OK) {
 			reason2 = rec(place(s, p2, e2));
 			if (found) return null;
-			reason2 = insert(reason2, level);
 			if (!contains(reason2, s.poly.length + 1)) return reason2;
+			reason2 = insert(reason2, level);
 		} else {
 			reason2 = getReason(r2, level, s.poly.length + 1);
 		}
