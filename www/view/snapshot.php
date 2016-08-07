@@ -32,7 +32,7 @@ echo date('Y-m-d H:i:s', $snapshot['snapshot_time']);
 ?></h1>
 <div><?php
 $full = !is_null(GetParameter('full'));
-if ($full) {
+if (!$full) {
   echo '[<a href="?full=1">Full</a>]';
 } else {
   echo '[<a href="?">Compact</a>]';
