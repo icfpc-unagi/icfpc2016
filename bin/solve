@@ -35,7 +35,7 @@ solve_problem() {
 }
 
 for problem_id in $(
-    curl --silent -F "solution_ai=${FLAGS_ai}" \
+    curl --silent -F "solution_ai=${FLAGS_ai_name}" \
         'http://db.sx9.jp/exec/candidates.php' | \
         head -n "${FLAGS_tasks}"); do
   solve_problem "${problem_id}" &
