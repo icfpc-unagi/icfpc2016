@@ -8,6 +8,12 @@ if (is_null($snapshot)) {
   die('Invalid snapshot');
 }
 
+if (GetParameter('plain')) {
+  header('Content-Type: text/plain');
+  echo json_encode($snapshot);
+  exit();
+}
+
 $users = [];
 for ($id = 1; $id < 10; $id++) {
   $users["$id"] = "Contest Organizer Problem Set $id";
