@@ -1,0 +1,44 @@
+#!/bin/bash
+# submit_solution submits a solution in ICFPC 2016.
+
+source "$(dirname "${BASH_SOURCE}")"/imos-variables || exit 1
+DEFINE_string ai '' 'AI command.'
+DEFINE_string ai_name '' 'AI name.'
+DEFINE_string ai_args '' 'Arguments.'
+DEFINE_int threads 5 'Number of threads.'
+DEFINE_int tasks 30 'Number of tasks.'
+DEFINE_int timeout 30 'Timeout'
+eval "${IMOSH_INIT}"
+
+if [ "${FLAGS_ai}" == '' ]; then
+  LOG FATAL '--ai is required.'
+fi
+
+solve_problem() {
+  local problem_id="$1"
+  local problem_file="$(sub::tmpfile)"
+  local solution_file="$(sub::tmpfile)"
+
+  LOG INFO "${FLAGS_ai} AI is solving ${problem_id}..."
+  curl --silent "http://db.sx9.jp/view/problem.php?plain=1&problem_id=${problem_id}" > "${problem_file}"
+  timeout "${FLAGS_timeout}s" "/mirror/global/ai/${FLAGS_ai}" ${FLAGS_ai_args} \
+      < "${problem_file}" > "${solution_file}" || true
+  LOG INFO "${FLAGS_ai} AI is submitting ${problem_id}..."
+  local ai_name="${FLAGS_ai_name}"
+  if [ "${ai_name}" == '' ]; then
+    ai_name="${FLAGS_ai}"
+  fi
+  "$(dirname "${BASH_SOURCE}")/submit_solution" \
+      --problem_id="${problem_id}" \
+      --solution="${solution_file}" \
+      --solution_ai="${ai_name}"
+}
+
+for problem_id in $(
+    curl --silent -F "solution_ai=${FLAGS_ai_name}" \
+        'http://db.sx9.jp/exec/candidates.php' | \
+        head -n "${FLAGS_tasks}"); do
+  solve_problem "${problem_id}" &
+  sub::throttle "${FLAGS_threads}"
+done
+wait
