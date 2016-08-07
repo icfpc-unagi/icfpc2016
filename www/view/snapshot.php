@@ -87,7 +87,7 @@ foreach ($snapshot['problems'] as $problem) {
   } else {
     echo '<td>(' . $resemblance . ')</td>';
   }
-  echo '<td><a href="solution.php?problem_id=' . $problem['problem_id'] . '">';
+  echo '<td><a href="problem.php?problem_id=' . $problem['problem_id'] . '">';
   if (!isset($solution['all']['solution_count'])) {
     echo 'No';
   } else if ($solution['submitted']['solution_resemblance'] == 1.0) {
