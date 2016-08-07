@@ -99,7 +99,7 @@ Draw($data);
 
 ?>
 </td></tr></table>
-<h1>Submit</h1>
+<h1 class="page-header">Submit</h1>
 <form action="?problem_id=<?php echo $problem_id; ?>" method="POST">
 <textarea name="solution" style="width:100%;height:200px"></textarea>
 <input type="submit" value="Submit">
