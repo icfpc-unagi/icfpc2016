@@ -102,6 +102,7 @@ Draw($data);
 </td></tr></table>
 <h1 class="page-header">Submit</h1>
 <form action="?problem_id=<?php echo $problem_id; ?>" method="POST">
+<table style="width:100%;margin:10px 0;"><tbody><tr><td nowrap="" style="padding-right:10px">AI name:</td><td style="width:100%"><input type="text" name="solution_ai" style="width:100%"></td></tr></tbody></table>
 <textarea name="solution" style="width:100%;height:200px"></textarea>
 <input type="submit" value="Submit">
 </form>
