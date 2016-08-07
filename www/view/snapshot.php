@@ -40,7 +40,7 @@ if ($full) {
 ?></div>
 <table class="table table-condensed table-striped">
   <tbody>
-<tr><th>ID</th><th>Owner</th><th>Problem Size</th><th>Owner's Solution Size</th><th>Solved</th><th>Solutions</th><th>Publish Time</th></tr>
+<tr><th<?php if (!$full) echo ' colspan="2"'; ?>>ID</th><th>Owner</th><th>Problem Size</th><th>Owner's Solution Size</th><th>Solved</th><th>Solutions</th><th>Publish Time</th></tr>
 <?php
 
 $solutions = [];
@@ -75,13 +75,16 @@ foreach ($snapshot['problems'] as $problem) {
     }
   }
   $solution = $solutions[intval($problem['problem_id'])];
-  if ($compact) {
+  if (!$full) {
     if ($solution['all']['solution_resemblance'] == 1) continue;
     if ($problem['owner'] == '42') continue;
   }
   echo '<tr>';
   echo '<td><a href="problem.php?problem_id=' . $problem['problem_id'] .
        '">' . $problem['problem_id'] . "</a></td>";
+  if (!$full) {
+    echo '<td><img src="../summary/' . $problem['problem_id'] . '.png" width="32" height="32"></td>';
+  }
   echo '<td>' . htmlspecialchars($users[$problem['owner']]) . "</td>";
   echo '<td>' . $problem['problem_size'] . "</td>";
   echo '<td>' . $problem['solution_size'] . "</td>";
