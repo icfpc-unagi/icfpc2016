@@ -116,7 +116,9 @@ create_tar() {
       kill "${tar_pid}" 2>/dev/null || true
       local file_size="$(wc -c < "${1}")"
       if (( file_size > FLAGS_file_size )); then
-        LOG FATAL "File size is too big: --file_size=${FLAGS_file_size}"
+        ls -lAR . >&2
+        LOG FATAL "File size ($file_size bytes) is bigger than limit:" \
+                  "--file_size=${FLAGS_file_size}"
       fi
     fi
     popd >/dev/null
