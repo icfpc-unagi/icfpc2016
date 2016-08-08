@@ -3,7 +3,8 @@
 #include "common.h"
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <gflags/gflags.h>
+
+#include "base/base.h"
 
 using Edge = pair<int, Bigrat>;
 using EdgeList = vector<Edge>;
@@ -316,7 +317,7 @@ void DFS(int v, Bigrat d) {
 //
 
 int main(int argc, char **argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv);
   Input();
   cerr << "Number of ponits: " << coords.size() << endl;
   ConstructGraph();
