@@ -53,7 +53,7 @@ DEFINE_string output '' \
     'Path to output a file on.  archive and download commands use this flag.'
 
 # Archive options.
-DEFINE_int --group='archive' file_size 30000000 \
+DEFINE_int --group='archive' file_size 100000000 \
     'Maximum size of a generated archive in bytes.'
 DEFINE_bool --group='archive' pass_working_directory false \
     "Pass a caller's working directory to the program." \
