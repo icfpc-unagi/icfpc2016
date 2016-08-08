@@ -115,6 +115,14 @@ inline Segment ReadSegment(istream &is) {
   return Segment(ReadPoint(is), ReadPoint(is));
 }
 
+inline void PrintPoint(const Point &p, ostream &os = cerr) {
+  os << p.x() << "," << p.y() << endl;
+}
+
+inline Point Normalize(const Point &p) {
+
+}
+
 inline int Quadrant(const Point &p) {
   assert(p.x() != 0 || p.y() != 0);
   if (p.y() >= 0 && p.x() > 0) return 0;

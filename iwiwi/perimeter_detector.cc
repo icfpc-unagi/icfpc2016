@@ -10,6 +10,10 @@ using EdgeList = vector<Edge>;
 using Graph = vector<EdgeList>;
 using DAG = vector<map<Bigrat, vector<Edge>>>;
 
+using R = Bigrat;
+using I = Bignum;
+using P = Point;
+
 int num_points;
 vector<Point> coords;
 vector<vector<int>> regions;
@@ -21,6 +25,7 @@ DEFINE_string(algorithm, "dfs", "");
 DEFINE_string(sources, "all", "");
 
 Graph adj;
+vector<vector<int>> adj_all;  // including irrational
 
 void Input() {
   istringstream is(ReadAllAndRemoveComma(cin));
@@ -38,8 +43,42 @@ void Input() {
   }
 }
 
-inline Bigrat Sqr(Bigrat x) {
-  return x * x;
+bool Distance(int a, int b, R &d) {  // Returns whether rational
+  // if (coords[a].x() < Bigrat(2, 3)) return false;
+  // if (coords[b].x() < Bigrat(2, 3)) return false;
+
+  R d2 =
+      Sqr(coords[a].x() - coords[b].x()) +
+      Sqr(coords[a].y() - coords[b].y());
+
+  // cerr << d2 << endl;
+
+  I num2 = numerator(d2), den2 = denominator(d2);
+  I num, numR, den, denR;
+  num = Sqrt(num2, numR);
+  den = Sqrt(den2, denR);
+  // cerr << num2 << " " << num << " " << numR << endl;
+  // cerr << den2 << " " << den << " " << denR << endl;
+  if (numR != 0 || denR != 0) {
+    return false;
+  } else {
+    assert(num * num == num2);
+    assert(den * den == den2);
+    // cerr << num << " " << den << endl;
+    d = R(num, den);
+    assert(d * d == d2);
+    // cerr << "Edge: " << a << "--" << b << ": " << d << " " << d2 << endl;
+
+    return true;
+  }
+}
+
+bool IsOnSegment(int end1, int end2, int mid) {
+  R a, b, c;
+  Distance(end1, mid, a);
+  Distance(end2, mid, b);
+  Distance(end1, end2, c);
+  return a + b == c;
 }
 
 void ConstructGraph() {
@@ -55,29 +94,39 @@ void ConstructGraph() {
 
   int num_edges = 0;
   adj.resize(num_points);
+  adj_all.resize(num_points);
   for (const auto &e : edge_candidates) {
     int a, b;
     tie(a, b) = e;
+    adj_all[a].emplace_back(b);
+    adj_all[b].emplace_back(a);
 
     Bigrat d2 =
         Sqr(coords[a].x() - coords[b].x()) +
         Sqr(coords[a].y() - coords[b].y());
 
+    Bigrat dummy;
+    if (!Distance(a, b, dummy)) continue;
+
     Bignum num2 = numerator(d2), den2 = denominator(d2);
     Bignum num, numR, den, denR;
     num = bm::sqrt(num2, numR);
     den = bm::sqrt(den2, denR);
-    if (numR != 0 || denR != 0) continue;  // Distance not rational!!
-    assert(num * num == num2);
-    assert(den * den == den2);
-    // cerr << num << " " << den << endl;
-    Bigrat d = Bigrat(num, den);
-    assert(d * d == d2);
-    // cerr << "Edge: " << a << "--" << b << ": " << d << " " << d2 << endl;
+    if (numR != 0 || denR != 0) {
+      continue;
+      // Distance not rational!!
+    } else {
+      assert(num * num == num2);
+      assert(den * den == den2);
+      // cerr << num << " " << den << endl;
+      Bigrat d = Bigrat(num, den);
+      assert(d * d == d2);
+      // cerr << "Edge: " << a << "--" << b << ": " << d << " " << d2 << endl;
 
-    ++num_edges;
-    adj[a].emplace_back(b, d);
-    adj[b].emplace_back(a, d);
+      ++num_edges;
+      adj[a].emplace_back(b, d);
+      adj[b].emplace_back(a, d);
+    }
   }
 
   cerr
@@ -86,6 +135,9 @@ void ConstructGraph() {
 }
 
 
+//
+// Search algorithms
+//
 
 vector<Edge> path;
 
@@ -175,6 +227,49 @@ vector<int> path;
 set<vector<int>> cache;
 int num_visited_nodes = 0;
 
+// i0 -> i1 -> i2
+bool IsTurnable(int i0, int i1, int i2) {
+  Point v1 = coords[i1];
+  Point v2 = coords[i2];
+  bg::subtract_point(v1, coords[i0]);
+  bg::subtract_point(v2, coords[i1]);
+
+  Bigrat d1, d2;
+  CHECK(Distance(i0, i1, d1));
+  CHECK(Distance(i1, i2, d2));
+  v1 = Point(v1.x() / d1, v1.y() / d1);
+  v2 = Point(v2.x() / d2, v2.y() / d2);
+
+  Point va = v1;
+  bg::add_point(va, v2);
+  if (va.x() == 0 && va.y() == 0) {  // Case 1: U-turn case
+    for (int j : adj_all[i1]) {
+      Point vb = coords[j];
+      bg::subtract_point(vb, coords[i1]);
+      if (bg::dot_product(v1, vb) == 0) return true;
+    }
+  } else {
+    // cerr << Det(va, v1) << " " << Det(va, v2) << endl;
+    for (int j : adj_all[i1]) {
+      Point vb = coords[j];
+      bg::subtract_point(vb, coords[i1]);
+
+      if (Det(va, vb) == 0) {
+        // cerr << "--" << endl;
+        // PrintPoint(coords[i0]);
+        // PrintPoint(coords[i1]);
+        // PrintPoint(coords[i2]);
+        // cout << coords[i0] << " " << coords[i1] << " " << coords[i2] << endl;
+        return true;  // TODO: check dot?
+      }
+    }
+  }
+  // puts("NO");
+  return false;
+}
+
+int num_hints = 0;
+
 void DFS(int v, Bigrat d) {
   if (++num_visited_nodes > FLAGS_search_limit) return;
 
@@ -185,6 +280,12 @@ void DFS(int v, Bigrat d) {
       printf("%d\n", (int)path.size() + 1);
       for (int p : path) printf("%d ", p);
       printf("%d\n", v);
+
+      ofstream ofs(string("hints/") + to_string(num_hints) + ".txt");
+      ofs << path.size() + 1 << endl;
+      for (int p : path) ofs << p << " ";
+      ofs << v << endl;
+      ++num_hints;
     }
     return;
   }
@@ -193,13 +294,26 @@ void DFS(int v, Bigrat d) {
   path.emplace_back(v);
 
   for (const auto &e : adj[v]) {
+    bool is_straight = path.size() >= 2 &&
+        IsOnSegment(path[path.size() - 2], e.first, path[path.size() - 1]);
+    bool is_turnable = path.size() >= 2 &&
+        IsTurnable(path[path.size() - 2], path[path.size() - 1], e.first);
+    if (is_straight) assert(is_turnable);
+
+    if (path.size() >= 2 && !is_turnable) continue;
+
     DFS(e.first, d + e.second);
   }
 
   --vis[v];
   path.pop_back();
 }
-}
+}  // namespace dfs
+
+
+//
+// Entry point
+//
 
 int main(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -215,7 +329,7 @@ int main(int argc, char **argv) {
   }
 
   for (int v : src_vs) {
-    cerr << "[[ " << v << " ]]" << endl;
+    // cerr << "[[ " << v << " ]]" << endl;
 
     if (FLAGS_algorithm == "dfs") {
       rep (iter, FLAGS_restart) {
@@ -232,42 +346,3 @@ int main(int argc, char **argv) {
     }
   }
 }
-
-
-
-
-
-/*
-vector<vector<vector<pair<int, Bigrat>>>> solutions;
-
-int src_v;
-vector<vector<pair<int, Bigrat>>> tmp;
-
-void search(int step, int v, int prv_v, const Bigrat &d) {
-  if (d > 1) return;
-
-  tmp[step].emplace_back(v, d);
-
-  if (d == 1) {
-    if (step == 3) {
-      if (src_v === v) {
-
-      }
-    } else {
-      search(step + 1, v, prv_v, 0);
-    }
-  } else {
-    rep (iter, 2) {
-      for (const auto &e : adj[v]) {
-        if ((e.first == prv_v) != (iter == 1)) continue;
-
-        Bigrat nxt_d = d + e.second;
-        search(step, e.first, v, nxt_d);
-      }
-    }
-
-  }
-
-  tmp[step].pop_back();
-}
-*/

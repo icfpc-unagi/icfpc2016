@@ -45,3 +45,14 @@ cc_binary(
     linkopts = ["-lgmp"],
     linkstatic = 1,
 )
+
+cc_binary(
+    name = "perimeter_detector",
+    srcs = ["perimeter_detector.cc", "common.h"],
+    deps = [
+        "//external:base",
+        "//external:boost",
+    ],
+    linkopts = ["-lgmp"],
+    linkstatic = 1,
+)
