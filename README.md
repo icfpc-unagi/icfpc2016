@@ -1,4 +1,14 @@
-# ICFPC 2016
+# Team Unagi's Repository for ICFPC 2016
+
+## Remarkable Solvers
+
+### wata/ConflictSolver.java
+
+NOTE: Input must be preprocessed by iwiwi/prefilter, and output must be postprocessed by iwiwi/postfilter1 and iwiwi/postfilter2.
+
+### chokduai/CodeFile1.cs
+
+It finds a convex hull.
 
 ## Configuration for CI Services
 
